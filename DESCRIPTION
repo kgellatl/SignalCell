@@ -1,11 +1,20 @@
 Package: SignalCell
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Title: Network Analysis for single cell RNA sequencing Data (sc-RNASeq)
+Version: 0.01
+Author: Kyle Gellatly, UMASS Medical School, Garber Lab
+Maintainer: Kyle Gellatly <kyle.gellatly@umassmed.edu>
+Description: Preprocessing, Normalization, Dimensionality Reduction, Clustering, and Network Analysis for single cell RNA Sequencing Data
 License: What license is it under?
 Encoding: UTF-8
+LinkingTo: Rcpp
 LazyData: true
+Depends:
+    R (>= 3.6.0),
+    SingleCellExperiment
+Imports:
+biocViews: Single Cell, Networking
+VignetteBuilder: knitr
+RoxygenNote: 7.1.0
+Suggests: knitr,
+    rmarkdown
