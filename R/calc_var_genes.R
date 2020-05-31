@@ -4,14 +4,12 @@
 #' or by a preliminary PCA.
 #'
 #' @param input the input sce
-#' @param method can either be "Expression", CV", "PCA", or "Gini"
+#' @param method can either be "CV", "Malhanobis", or "Gini"
 #' @param assay if NULL will default to def_assay. Can provide a character assay argument.
 #' @param threshold UMI threshold for gene detection
 #' @param minCells number of cells expressed above threshold for a given gene
-#' @param cutoff the percentile of genes to keep
 #' @param nComp if method = PCA, the number of components to keep
 #' @param log whether or not to log scale the data
-#' @param output if "simple" a gene vector will be returned. If "sce" these genes will be annotated to the sce object
 #' @param fudge whether or not to add a fudge factor to the entire matrix
 #' @param fudge_val the value to add to matrix before transformation
 #' @export
@@ -26,31 +24,24 @@
 #' @examples
 #' gene_subset <- subset_genes(input = sce, method = "PCA", assay = "counts")
 
-var_genes <- function(input, method, assay = NULL, threshold = 1, minCells = 10, cutoff = 0.85, nComp = 10, log = F, output = "simple", fudge = F, fudge_val = .01){
+calc_var_genes <- function(input, method, assay = NULL, threshold = 1, minCells = 10, nComp = 10, log = F, fudge = F, fudge_val = .01){
 
   if(is.null(assay)){
     def_assay <- get_def_assay(input)
   }
 
+  if(!(method%in%c("CV", "Malhanobis", "Gini"))){
+    stop("Method must be one of CV, Malhanobis, or Gini")
+  }
   input_mat <- input@assays@data@listData[[def_assay]]
 
-  gCount <- apply(input_mat,1,function(x) length(which(x>=threshold))) # a bit wasteful if threshold = 0, but alas.
+  gCount <- apply(input_mat,1,function(x) length(which(x>=threshold)))
   gene_subset <- rownames(input_mat[(which(gCount >= minCells)),])
 
-  if(method =="Expression"){
-
-   rowData(input)$var_genes_expression <- NA
-   ind <- match(gene_subset, rownames(input))
-   rowData(input)$var_genes_expression[ind] <- T
-
-  }
 
   if(method == "CV"){
-
-    rowData(input)$var_genes_CV <- F
-
     if(fudge){
-      input_mat <- input_mat+fudge_val
+      input_mat <- input_mat[gene_subset,]+fudge_val
     }
 
     g_exp <- log2(input_mat[gene_subset,]+2)-1
@@ -58,28 +49,15 @@ var_genes <- function(input, method, assay = NULL, threshold = 1, minCells = 10,
     CV <- sqrt((exp(gsd))^2-1)
 
     ind <- match(names(CV), rownames(input))
-
     rowData(input)$CV <- NA
     rowData(input)$CV[ind] <- as.vector(CV)
 
-    cv_thresh <- quantile(CV,cutoff)
-    gene_subset_cv <- names(which(CV>cv_thresh))
-
-    ind <- match(gene_subset_cv, rownames(input))
-
-    rowData(input)$var_genes_CV[ind] <- T
-
-    gene_subset <- gene_subset_cv
-
   }
 
-  if(method == "PCA"){
-    rowData(input)$var_genes_PCA <- F
-
+  if(method == "Malhanobis"){
     if(fudge){
-      input_mat <- input_mat+fudge_val
+      input_mat <- input_mat[gene_subset,]+fudge_val
     }
-
     if(log){
       input_mat <- log2(input_mat[gene_subset,]+2)-1
     }
@@ -90,59 +68,27 @@ var_genes <- function(input, method, assay = NULL, threshold = 1, minCells = 10,
     d <- mahalanobis(pc$rotation[,1:nComp], center=rep(0, nComp), cov = cov(pc$rotation[,1:nComp]))
 
     ind <- match(names(d), rownames(input))
-
-    rowData(input)$malhanobis_d <- NA
-    rowData(input)$malhanobis_d[ind] <- as.vector(d)
-
-    dThresh <- quantile(d,cutoff)
-    gene_subset_malhanobis <- names(which(d>dThresh))
-
-    ind <- match(gene_subset_malhanobis, rownames(input))
-
-    rowData(input)$var_genes_PCA[ind] <- T
-
-    gene_subset <- gene_subset_malhanobis
+    rowData(input)$Malhanobis <- NA
+    rowData(input)$Malhanobis[ind] <- as.vector(d)
 
   }
 
   if(method == "Gini"){
-    rowData(input)$var_genes_gini <- F
-
     if(fudge){
-      input_mat <- input_mat+fudge_val
+      input_mat <- input_mat[gene_subset,]+fudge_val
     }
-
     if(log){
       input_mat <- log2(input_mat[gene_subset,]+2)-1
-    } else {
-      input_mat <- input_mat[gene_subset,]
     }
 
-    gini_scores <- edgeR::gini(t(as.matrix(input_mat)))
+    gini_scores <- edgeR::gini(t(as.matrix(input_mat[gene_subset,])))
 
     ind <- match(names(gini_scores), rownames(input))
-
-    rowData(input)$gini <- NA
-    rowData(input)$gini[ind] <- as.vector(gini_scores)
-
-    gini_thresh <- quantile(gini_scores,cutoff)
-    gene_subset_gini <- names(which(gini_scores>gini_thresh))
-
-    ind <- match(gene_subset_gini, rownames(input))
-
-    rowData(input)$var_genes_gini[ind] <- T
-
-    gene_subset <- gene_subset_gini
-
-
+    rowData(input)$Gini <- NA
+    rowData(input)$Gini[ind] <- as.vector(gini_scores)
   }
 
-  if(output == "simple"){
-    return(gene_subset)
-  }
-  if(output == "sce"){
-    return(input)
-  }
+  return(input)
 }
 
 

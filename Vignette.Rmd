@@ -22,19 +22,28 @@ sce <- construct_sce(sparse_dat)
 class(sce)
 sce
 
+counts <- assay(sce, "counts")
+libsizes <- colSums(counts)
+size.factors <- libsizes/mean(libsizes)
+logcounts(sce) <- as(log2(t(t(counts)/size.factors) + 1), "dgCMatrix")
+assayNames(sce)
+
 get_def_assay(sce)
-sce <- set_def_assay(sce, "counts")
-# sce <- set_def_assay(sce, "norm")
+sce <- set_def_assay(sce, "logcounts")
+get_def_assay(sce)
 
 
+assayNames(sce)
 rm(sparse_dat)
 rm(tst_dat)
+rm(libsizes)
+rm(size.factors)
 ```
 
 ## exprs Like functionality
 ```{r}
-class(sce@assays@data$counts)
-head(sce@assays@data$counts)
+class(assay(sce, "counts"))
+class(assay(sce, "logcounts"))
 ```
 
 
@@ -64,19 +73,22 @@ sce
 ```
 ## Finding variable genes
 ```{r}
-exp_var_genes <- var_genes(sce, method = "Expression")
 
-sce <- var_genes(sce, method = "Expression", output = "sce")
-sce <- var_genes(sce, method = "CV", output = "sce")
-sce <- var_genes(sce, method = "PCA", output = "sce")
-sce <- var_genes(sce, method = "Gini", output = "sce")
-
+sce <- calc_var_genes(sce, method = "CV")
+sce <- calc_var_genes(sce, method = "Malhanobis")
+sce <- calc_var_genes(sce, method = "Gini")
 
 rowData(sce)
 colnames(rowData(sce))
 
-```
+gene_subset <- get_var_genes(sce, method = "CV", cutoff = 0.85)
 
+```
+## Dimension reduction
+```{r}
+int_colData(sce)
+
+```
 
 
 
