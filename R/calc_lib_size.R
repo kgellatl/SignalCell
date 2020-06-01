@@ -9,7 +9,9 @@
 #' @examples
 #' sce <- calc_libsize(input = sce)
 
-calc_libsize <- function(input, assay = "counts", suffix = NULL){
+calc_libsize <- function(input,
+                         assay = "counts",
+                         suffix = NULL){
 
   libsizes <- apply(input@assays@data[[assay]],2,sum)
 

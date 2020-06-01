@@ -11,7 +11,9 @@
 #' @examples
 #' sce <- get_def_assay(sce)
 
-get_var_genes <- function(input, method, cutoff){
+get_var_genes <- function(input,
+                          method,
+                          cutoff){
 
   if(!(method%in%c("CV", "Malhanobis", "Gini"))){
     stop("Method must be one of CV, Malhanobis, or Gini")

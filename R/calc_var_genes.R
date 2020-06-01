@@ -24,16 +24,31 @@
 #' @examples
 #' gene_subset <- subset_genes(input = sce, method = "PCA", assay = "counts")
 
-calc_var_genes <- function(input, method, assay = NULL, threshold = 1, minCells = 10, nComp = 10, log = F, fudge = F, fudge_val = .01){
+calc_var_genes <- function(input,
+                           method,
+                           assay = NULL,
+                           threshold = 1,
+                           minCells = 10,
+                           nComp = 10,
+                           log = F,
+                           fudge = F,
+                           fudge_val = .01){
 
-  if(is.null(assay)){
-    def_assay <- get_def_assay(input)
-  }
 
   if(!(method%in%c("CV", "Malhanobis", "Gini"))){
     stop("Method must be one of CV, Malhanobis, or Gini")
   }
-  input_mat <- input@assays@data@listData[[def_assay]]
+
+  if(is.null(assay)){
+    def_assay <- get_def_assay(input)
+    input_mat <- input@assays@data@listData[[def_assay]]
+  } else {
+    if(!(assay%in%names(input@assays))){
+      stop(paste0("Assay not found, assays available are, ", names(input@assays)))
+    }
+    input_mat <- input@assays@data@listData[[assay]]
+  }
+
 
   gCount <- apply(input_mat,1,function(x) length(which(x>=threshold)))
   gene_subset <- rownames(input_mat[(which(gCount >= minCells)),])

@@ -10,7 +10,8 @@
 #' @examples
 #' sce <- set_def_assay(sce, "counts")
 
-set_def_assay <- function(input, def_assay){
+set_def_assay <- function(input,
+                          def_assay){
 
   if(!(def_assay %in% names(input@assays))){
     stop(paste0("Assay not found, cannot set to default, assays available are, ", names(input@assays)))
