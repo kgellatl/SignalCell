@@ -28,10 +28,6 @@ size.factors <- libsizes/mean(libsizes)
 logcounts(sce) <- as(log2(t(t(counts)/size.factors) + 1), "dgCMatrix")
 assayNames(sce)
 
-get_def_assay(sce)
-sce <- set_def_assay(sce, "logcounts")
-get_def_assay(sce)
-
 
 assayNames(sce)
 rm(sparse_dat)
@@ -44,6 +40,11 @@ rm(size.factors)
 ```{r}
 class(assay(sce, "counts"))
 class(assay(sce, "logcounts"))
+
+get_def_assay(sce)
+sce <- set_def_assay(sce, "logcounts")
+get_def_assay(sce)
+
 ```
 
 
@@ -86,6 +87,30 @@ gene_subset <- get_var_genes(sce, method = "CV", cutoff = 0.85)
 ```
 ## Dimension reduction
 ```{r}
+colData(sce)
+
+sce <- dim_reduce(sce, genelist = gene_subset, pre_reduce = "iPCA")  # save_lem!!!
+colData(sce)
+int_colData(sce)
+lem <- reducedDim(sce)
+
+head(lem@sampleFactors)
+head(lem@featureLoadings)
+head(lem@factorData)
+lem@metadata[1:9]
+
+
+sce <- dim_reduce(sce, genelist = gene_subset, pre_reduce = "vPCA")
+reducedDims(sce)
+
+sce <- set_xy(sce, "iPCA", x = "x", y = 2)
+head(colData(sce))
+
+sce <- set_xy(sce, "vPCA", x = 1, y = "y")
+head(colData(sce))
+
+sce <- dim_reduce(sce, genelist = gene_subset, pre_reduce = "vPCA", reducedDim_key = "attempt17")
+reducedDims(sce)
 int_colData(sce)
 
 ```
