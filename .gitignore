@@ -4,3 +4,6 @@
 .Ruserdata
 .Rbuildignore
 SignalCell.Rproj
+.Rapp.history
+R/.Rapp.history
+man/.Rapp.history
