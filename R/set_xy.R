@@ -33,7 +33,6 @@ set_xy <- function(input,
     colData(input)$y <- int_lem@metadata$y
   } else {
     colData(input)$y <- int_lem@sampleFactors[,y]
-
   }
     return(input)
 }

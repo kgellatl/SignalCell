@@ -42,13 +42,13 @@ dim_reduce <- function(input,
 
   if(is.null(assay)){
     def_assay <- get_def_assay(input)
-    input_mat <- input@assays@data@listData[[def_assay]]
+    input_mat <- assay(input, def_assay)[gene_subset,]
     assay_name <- def_assay
   } else {
     if(!(assay%in%names(input@assays))){
       stop(paste0("Assay not found, assays available are, ", names(input@assays)))
     }
-    input_mat <- input@assays@data@listData[[assay]]
+    input_mat <- assay(input, assay)[gene_subset,]
     assay_name <- assay
   }
 
@@ -56,7 +56,6 @@ dim_reduce <- function(input,
   names(args_list) <- c("assay_name", "genelist", "pre_reduce", "nComp", "tSNE_perp", "iterations", "nVar", "log", "scale")
   metadata_lem <- args_list
 
-  input_mat <- input_mat[gene_subset,]
   if(log){
     input_mat <- log2(input_mat[,]+2)-1
   }
