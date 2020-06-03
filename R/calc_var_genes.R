@@ -41,13 +41,13 @@ calc_var_genes <- function(input,
 
   if(is.null(assay)){
     def_assay <- get_def_assay(input)
-    input_mat <- assay(input, def_assay)[gene_subset,]
+    input_mat <- assay(input, def_assay)
     assay_name <- def_assay
   } else {
     if(!(assay%in%names(input@assays))){
       stop(paste0("Assay not found, assays available are, ", names(input@assays)))
     }
-    input_mat <- assay(input, assay)[gene_subset,]
+    input_mat <- assay(input, assay)
     assay_name <- assay
   }
 
