@@ -14,7 +14,10 @@ Depends:
     SingleCellExperiment,
     tidyverse
 Imports:
-    edgeR
+    edgeR,
+    kknn,
+    Rtsne,
+    densityClust
 biocViews: Single Cell, Networking
 VignetteBuilder: knitr
 RoxygenNote: 7.1.0
