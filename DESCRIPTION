@@ -11,7 +11,8 @@ LinkingTo: Rcpp
 LazyData: true
 Depends:
     R (>= 3.6.0),
-    SingleCellExperiment
+    SingleCellExperiment,
+    tidyverse
 Imports:
     edgeR
 biocViews: Single Cell, Networking
