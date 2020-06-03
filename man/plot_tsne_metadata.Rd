@@ -11,12 +11,13 @@ plot_tsne_metadata(
   coords = NULL,
   title = NULL,
   colors = NULL,
-  theme = "classic",
   size = 1.5,
   ncol = 2,
   legend_dot_size = 1.5,
   text_sizes = c(20, 10, 5, 10, 5, 5),
-  shuffle = T
+  shuffle = T,
+  xlab = "x",
+  ylab = "y"
 )
 }
 \arguments{
@@ -31,8 +32,6 @@ plot_tsne_metadata(
 
 \item{colors}{What colors to utilize for categorial data. Be sure it is of the proper length!}
 
-\item{theme}{the ggplot theme}
-
 \item{size}{The size of the points}
 
 \item{ncol}{How many columns if faceting}
@@ -40,6 +39,12 @@ plot_tsne_metadata(
 \item{legend_dot_size}{Size of dot in legend}
 
 \item{text_sizes}{the text sizes on the plot}
+
+\item{xlab}{character x label}
+
+\item{ylab}{character y label}
+
+\item{theme}{the ggplot theme}
 
 \item{whether}{or not to shuffle the matrix to prevent last plotted factor blocking rest}
 }

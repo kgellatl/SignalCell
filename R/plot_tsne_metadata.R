@@ -14,6 +14,8 @@
 #' @param legend_dot_size Size of dot in legend
 #' @param text_sizes the text sizes on the plot
 #' @param whether or not to shuffle the matrix to prevent last plotted factor blocking rest
+#' @param xlab character x label
+#' @param ylab character y label
 #' @export
 #' @details
 #' Utilize information stored in pData to control the plot display.
@@ -31,7 +33,9 @@ plot_tsne_metadata <- function(input,
                                ncol = 2,
                                legend_dot_size = 1.5,
                                text_sizes = c(20,10,5,10,5,5),
-                               shuffle = T){
+                               shuffle = T,
+                               xlab = "x",
+                               ylab = "y"){
 
   if(!is.null(coords)){
     if(length(coords) == 1){
@@ -53,13 +57,6 @@ plot_tsne_metadata <- function(input,
   background <- g_Dat[,c("x", "y")]
 
   g <- ggplot(g_Dat)
-
-  if(is.null(title)){
-    title <- color_by
-    g <- g + labs(title = title)
-  } else {
-    g <- g + labs(title = title)
-  }
   x <- "x"
   y <- "y"
   g <- g + geom_point(data = background, aes_string(x = x, y = y), shape = 20, size = size, col = "gray")
@@ -78,6 +75,12 @@ plot_tsne_metadata <- function(input,
     }
   }
   g <- g + guides(colour = guide_legend(override.aes = list(size=legend_dot_size)))
+  if(is.null(title)){
+    g <- g + labs(title = color_by)
+  } else {
+    g <- g + labs(title = title)
+  }
+  g <- g + labs(x = xlab, y = ylab)
   plot(g)
 }
 
