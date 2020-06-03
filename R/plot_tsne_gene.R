@@ -13,6 +13,8 @@
 #' @param size The size of the points
 #' @param ncol controls the number of columns if faceting
 #' @param text_sizes the text sizes on the plot
+#' @param xlab character x label
+#' @param ylab character y label
 #' @export
 #' @details
 #' Utilize information stored in colData to control the plot display.
@@ -30,7 +32,9 @@ plot_tsne_gene <- function(input,
                            # theme = "classic",
                            size = 1.5,
                            ncol = 2,
-                           text_sizes = c(20,10,5,10,5,5)) {
+                           text_sizes = c(20,10,5,10,5,5),
+                           xlab = "x",
+                           ylab = "y") {
 
   if(length(gene) > 1 && !(is.null(facet_by))){
     stop("Cannot facet multiple genes.")
@@ -74,6 +78,8 @@ plot_tsne_gene <- function(input,
   x <- "x"
   y <- "y"
 
+  g_Dat <- g_Dat[which(g_Dat$Expression > 0),]
+
   g <- ggplot(g_Dat)
   g <- g + geom_point(data = background, aes_string(x = x, y = y), shape = 20, size = size, col = "gray")
   g <- g +  scale_color_gradientn(colours=colors)
@@ -88,12 +94,13 @@ plot_tsne_gene <- function(input,
   g <- g +  theme(plot.title = element_text(size = text_sizes[1]), axis.title = element_text(size = text_sizes[2]), axis.text = element_text(size = text_sizes[3]), legend.title = element_text(size = text_sizes[4]), legend.text=element_text(size=text_sizes[5]))
   g <- g +  theme(legend.position = "bottom", plot.title = element_text(hjust = 0.5))
   if(!is.null(title)){
-    g <- g +  labs(title= title, col= "UMIs", x = "tSNE[1]", y = "tSNE[2]")
+    g <- g +  labs(title = title)
   } else {
     if(!is.null(facet_by)){
-      g <- g +  labs(title= gene, col= "UMIs", x = "tSNE[1]", y = "tSNE[2]")
+      g <- g +  labs(title = gene)
     }
   }
+  g <- g + labs(col = assay_name, x = xlab, y = ylab)
   return(g)
 }
 

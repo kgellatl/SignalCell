@@ -12,16 +12,17 @@ plot_tsne_gene(
   coords = NULL,
   title = NULL,
   colors = c("gray", "blue", "red", "yellow"),
-  theme = "classic",
   size = 1.5,
   ncol = 2,
-  text_sizes = c(20, 10, 5, 10, 5, 5)
+  text_sizes = c(20, 10, 5, 10, 5, 5),
+  xlab = "x",
+  ylab = "y"
 )
 }
 \arguments{
 \item{input}{The input data}
 
-\item{gene}{the gene or gene to plot}
+\item{gene}{the gene or genes to plot}
 
 \item{facet_by}{If ONE gene is being plotted it can be faceted. You cannot facet multiple gene}
 
@@ -33,13 +34,17 @@ plot_tsne_gene(
 
 \item{colors}{Colors for the cells}
 
-\item{theme}{the ggplot theme}
-
 \item{size}{The size of the points}
 
 \item{ncol}{controls the number of columns if faceting}
 
 \item{text_sizes}{the text sizes on the plot}
+
+\item{xlab}{character x label}
+
+\item{ylab}{character y label}
+
+\item{theme}{the ggplot theme}
 }
 \description{
 This will plot gene information onto a 2d tsne plot
