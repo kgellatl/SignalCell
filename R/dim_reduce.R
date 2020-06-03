@@ -5,7 +5,7 @@
 #' @param input the input sce
 #' @param genelist the subset of genes to perform dimensionality reduction on
 #' @param assay The assay to operate on. Will default to get_def_assay(input)
-#' @param pre_reduce the algorithm choice for reduction before tSNE (either "ICA", "PCA", "iPCA").
+#' @param pre_reduce the algorithm choice for reduction before tSNE (either "ICA", "PCA", "iPCA", or FALSE if you want to reuse).
 #' @param nComp the number of components to reduce too before tSNE, 5-20 recommended.
 #' @param tSNE_perp number of cells expressed above threshold for a given gene, 10-100 recommended.
 #' @param iterations The number of iterations for tSNE to perform.
@@ -29,6 +29,7 @@ dim_reduce <- function(input,
                         genelist,
                         assay = NULL,
                         pre_reduce = "iPCA",
+                        lem = NULL,
                         nComp = 15,
                         tSNE_perp = 30,
                         iterations = 1000,
@@ -50,6 +51,10 @@ dim_reduce <- function(input,
     }
     input_mat <- assay(input, assay)[gene_subset,]
     assay_name <- assay
+  }
+
+  if(!(pre_reduce%in%c("ICA", "PCA", "iPCA", "vPCA", FALSE))){
+    stop("Pre-reduce muse be one of ICA, PCA, iPCA, vPCA, or FALSE")
   }
 
   args_list <- list(assay_name, genelist, pre_reduce, nComp, tSNE_perp, iterations, nVar, log, scale)
@@ -141,6 +146,17 @@ dim_reduce <- function(input,
     print("Starting tSNE")
   }
 
+  if(pre_reduce == F){
+    if(is.null(lem)){
+      stop(paste0("Please provide a LEM. Available are ", paste0(reducedDimNames(input), collapse = ", ")))
+    }
+    if(!(lem %in% reducedDimNames(sce))){
+      stop(paste0("LEM not found, LEMs available are ", paste0(reducedDimNames(input), collapse = ", ")))
+    }
+    tsne_input <- reducedDim(input, lem)@sampleFactors
+    save_lem <- F
+  }
+
   set.seed(seed)
   tSNE_result <- Rtsne::Rtsne(tsne_input, dims = 2, perplexity = tSNE_perp, theta = 0.5, check_duplicates = F, pca = F, max_iter = iterations, verbose = print_progress)
   set.seed(NULL)
@@ -156,6 +172,12 @@ dim_reduce <- function(input,
 
   colData(input)$x <- tSNE_result[,"x"]
   colData(input)$y <- tSNE_result[,"y"]
+
+  if(pre_reduce == F){
+    reducedDim(input, lem)@metadata$x <- colData(input)$x
+    reducedDim(input, lem)@metadata$y <- colData(input)$y
+  }
+
 
 
   if(save_lem){
