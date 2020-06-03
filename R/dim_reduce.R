@@ -57,7 +57,7 @@ dim_reduce <- function(input,
   metadata_lem <- args_list
 
   if(log){
-    input_mat <- log2(input_mat[,]+2)-1
+    input_mat <- log2(input_mat+2)-1
   }
   if(scale){
     input_mat <- scale(input_mat)
