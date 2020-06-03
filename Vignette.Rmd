@@ -13,33 +13,34 @@ library(SignalCell)
 ```{r}
 load("~/Dropbox (UMass Medical School)/UMASS/GitHub/R/SignalCell/data/tst_dat.Rdata")
 sparse_dat <- as(tst_dat, "dgCMatrix")
+
+load("~/Dropbox (UMass Medical School)/Lab_inDrop/mDC_vignette_data/mDC_dat.Rdata")
+sparse_dat <- as(mDC_dat, "dgCMatrix")
+
 ```
 
+# SCE Class
+
 ## Construct SingleCellExperiment
+
 ### http://bioconductor.org/packages/release/bioc/html/SingleCellExperiment.html
 ```{r}
+
 sce <- construct_sce(sparse_dat)
 class(sce)
+class(assay(sce, "counts"))
 sce
+
+```
+
+### Enhanced exprs Like functionality
+```{r}
 
 counts <- assay(sce, "counts")
 libsizes <- colSums(counts)
 size.factors <- libsizes/mean(libsizes)
 logcounts(sce) <- as(log2(t(t(counts)/size.factors) + 1), "dgCMatrix")
 assayNames(sce)
-
-
-assayNames(sce)
-rm(sparse_dat)
-rm(tst_dat)
-rm(libsizes)
-rm(size.factors)
-```
-
-## exprs Like functionality
-```{r}
-class(assay(sce, "counts"))
-class(assay(sce, "logcounts"))
 
 get_def_assay(sce)
 sce <- set_def_assay(sce, "logcounts")
@@ -48,31 +49,37 @@ get_def_assay(sce)
 ```
 
 
-## pData Like functionality
+### pData Like functionality
 ```{r}
+
 sce$Timepoint <- "0hr"
 sce$Timepoint[grep("1", colnames(sce))] <- "1hr"
+sce$Timepoint[grep("4", colnames(sce))] <- "4hr"
+
+sce$UMI_sum_raw <- libsizes
 
 colData(sce)
 sce
 
-colData(sce)$label <- sce$Timepoint
-colData(sce)
-
-colLabels(sce)
-
 ```
 
 
-## fData Like functionality
+### fData Like functionality
+
 ```{r}
+
 counts <- apply(sce@assays@data$counts, 1, function(c)sum(c!=0))
 rowData(sce)$gene_counts <- counts
 rowData(sce) # use for vector annotations
 sce@elementMetadata # use for bulk values??
 sce
+
 ```
+
+# Basic Analysis
+
 ## Finding variable genes
+
 ```{r}
 
 sce <- calc_var_genes(sce, method = "CV")
@@ -80,42 +87,82 @@ sce <- calc_var_genes(sce, method = "Malhanobis")
 sce <- calc_var_genes(sce, method = "Gini")
 
 rowData(sce)
-colnames(rowData(sce))
+sce
 
-gene_subset <- get_var_genes(sce, method = "CV", cutoff = 0.85)
+gene_subset <- get_var_genes(sce, method = "Malhanobis", cutoff = 0.85)
 
 ```
-## Dimension reduction
-```{r}
-colData(sce)
 
-sce <- dim_reduce(sce, genelist = gene_subset, pre_reduce = "iPCA")  # save_lem!!!
+## Dimension reduction
+
+```{r}
+
+sce <- dim_reduce(sce, genelist = gene_subset, pre_reduce = "iPCA", nComp = 10, save_lem = T)  # save_lem!!!
 colData(sce)
 int_colData(sce)
-lem <- reducedDim(sce)
 
+lem <- reducedDim(sce, "iPCA")
 head(lem@sampleFactors)
 head(lem@featureLoadings)
 head(lem@factorData)
 lem@metadata[1:9]
 
-
 sce <- dim_reduce(sce, genelist = gene_subset, pre_reduce = "vPCA")
+sce <- dim_reduce(sce, genelist = gene_subset, pre_reduce = "PCA", reducedDim_key = "PCA_Param_15", nComp = 10, tSNE_perp = 30)
 reducedDims(sce)
 
-sce <- set_xy(sce, "iPCA", x = "x", y = 2)
+sce <- set_xy(sce, "PCA_Param_15", x = 1, y = 2)
 head(colData(sce))
 
-sce <- set_xy(sce, "vPCA", x = 1, y = "y")
+sce <- set_xy(sce, "iPCA")
 head(colData(sce))
 
-sce <- dim_reduce(sce, genelist = gene_subset, pre_reduce = "vPCA", reducedDim_key = "attempt17")
-reducedDims(sce)
-int_colData(sce)
+```
+
+## Clustering
+
+```{r}
+
+sce <- cluster_cells(sce, lem = "iPCA", dims = "Comp", method = "spectral", num_clust = 6)
+
+sce <- cluster_cells(sce, lem = "iPCA", dims = "2d", method = "density", name = "iPCA_cluster_2d", num_clust = 8)
+
+```
+
+# Basic Plots
+
+## tSNE metadata Plot
+
+```{r}
+
+plot_tsne_metadata(sce, color_by = "Cluster")
+
+plot_tsne_metadata(sce, color_by = "iPCA_cluster_2d", facet_by = "Timepoint",  coords = c("iPCA", 1, 2))
 
 ```
 
 
+## tSNE gene Plot
 
+```{r}
+plot_tsne_gene(sce, gene = "Ccr7")
+plot_tsne_gene(sce, gene = c("Ccr7", "Lcn2"))
+
+plot_tsne_gene(sce, gene = c("Tnf"), facet_by = "Timepoint")
+
+```
+## Violin Plot
+
+```{r}
+
+plot_violin(sce, gene = "Ccr7", color_by = "Cluster")
+plot_violin(sce, gene = "Ccr7", color_by = "Cluster", assay = "counts")
+plot_violin(sce, gene = c("Ccr7", "Lcn2"), color_by = "Cluster")
+plot_violin(sce, gene = c("Tnf"), facet_by = "Timepoint", color_by = "Cluster")
+
+
+```
+
+# Bulk Analysis
 
 
