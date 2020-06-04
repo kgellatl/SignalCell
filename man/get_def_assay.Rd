@@ -10,7 +10,7 @@ get_def_assay(input)
 \item{input}{the input sce}
 }
 \description{
-This will get the default assay to operate on for downstream analysis.
+This will get the default assay used for downstream analysis.
 }
 \details{
 

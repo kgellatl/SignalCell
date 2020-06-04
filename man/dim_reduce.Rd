@@ -12,7 +12,7 @@ dim_reduce(
   lem = NULL,
   nComp = 15,
   tSNE_perp = 30,
-  iterations = 1000,
+  iterations = 500,
   print_progress = TRUE,
   nVar = 0.85,
   log = F,

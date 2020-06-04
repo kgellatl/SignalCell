@@ -4,10 +4,14 @@
 \alias{calc_libsize}
 \title{Calculate Library Size}
 \usage{
-calc_libsize(input, assay = "counts", suffix = NULL)
+calc_libsize(input, assay = "counts", label = NULL)
 }
 \arguments{
 \item{input}{the input sce object}
+
+\item{assay}{which assay to calculate library size on}
+
+\item{suffix}{the}
 }
 \description{
 This function will count the number of reads / UMIs per cell
