@@ -3,6 +3,8 @@
 #' This function will count the number of reads / UMIs per cell
 #'
 #' @param input the input sce object
+#' @param assay which assay to calculate library size on
+#' @param suffix the
 #' @export
 #' @details
 #' This will calculate the total number of UMIs on a per cell basis.
@@ -11,13 +13,15 @@
 
 calc_libsize <- function(input,
                          assay = "counts",
-                         suffix = NULL){
+                         label = NULL){
 
-  libsizes <- apply(input@assays@data[[assay]],2,sum)
+  if(!(assay %in% assayNames(input))){
+    stop(paste0("Assay not found, cannot set to default, assays available are, ", names(input@assays)))
+  }
 
-  if(!is.null(suffix)){
-    label <- paste0("libsize", "_", suffix)
-  } else {
+  libsizes <- apply(assay(input, assay),2,sum)
+
+  if(is.null(label)){
     label <- "libsize"
   }
 
