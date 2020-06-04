@@ -23,11 +23,12 @@ get_var_genes <- function(input,
     stop("Please use calc_var_genes to calculate genewise statistics before this function.")
   }
 
-  vals <- rowData(sce)[method]
-  vals <- vals[,1]
+  vals <- rowData(sce)[,method]
   cut_val <- quantile(vals, cutoff, na.rm = T)
   ind <- which(vals >= cut_val)
   gene_subset <- rownames(sce)[ind]
 
   return(gene_subset)
 }
+
+# Doc Check

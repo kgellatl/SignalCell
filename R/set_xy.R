@@ -1,11 +1,11 @@
 #' Set xy
 #'
-#' This will set default X and Y coordinates based on the LEM results within reducedDims(sce)
+#' This will set default X and Y coordinates based on the LEM results within reducedDim(sce)
 #'
 #' @param input the input sce
 #' @param lem the LEM within reducedDims
-#' @param x The x values for 2D representation. Can be character x or a numeric column of lem@sampleFactors
-#' @param y The y values for 2D representation. Can be character y or a numeric column of lem@sampleFactors
+#' @param x The x values for 2D representation. Can be character x or a numeric column of sampleFactors(lem)
+#' @param y The y values for 2D representation. Can be character y or a numeric column of sampleFactors(lem)
 #' @export
 #' @details
 #'
@@ -37,5 +37,6 @@ set_xy <- function(input,
     return(input)
 }
 
+# Doc Check
 
 
