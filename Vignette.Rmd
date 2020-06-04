@@ -1,11 +1,19 @@
 ---
-title: "SignalCellVignette"
-output: html_document
+title: "SignalCell"
+geometry: margin=0.5cm
+author: "Kyle Gellatly"
+output:
+  html_document:
+    toc: true
+    toc_float : yes
+    toc_depth : 3
+    theme : cerulean
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+```{r setup, include=FALSE, warning=FALSE, error=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = "")
 library(SignalCell)
+
 ```
 
 ## Load Data
@@ -23,9 +31,8 @@ sparse_dat <- as(mDC_dat, "dgCMatrix")
 
 ## Construct SingleCellExperiment
 
-### http://bioconductor.org/packages/release/bioc/html/SingleCellExperiment.html
 ```{r}
-
+### http://bioconductor.org/packages/release/bioc/html/SingleCellExperiment.html
 sce <- construct_sce(sparse_dat)
 class(sce)
 class(assay(sce, "counts"))
@@ -34,6 +41,7 @@ sce
 ```
 
 ### Enhanced exprs Like functionality
+
 ```{r}
 
 counts <- assay(sce, "counts")
@@ -48,8 +56,8 @@ get_def_assay(sce)
 
 ```
 
-
 ### pData Like functionality
+
 ```{r}
 
 sce$Timepoint <- "0hr"
@@ -62,7 +70,6 @@ colData(sce)
 sce
 
 ```
-
 
 ### fData Like functionality
 
@@ -126,7 +133,7 @@ head(colData(sce))[,c("x", "y")]
 
 sce <- cluster_cells(sce, lem = "iPCA", dims = "Comp", method = "spectral", num_clust = 6)
 
-sce <- cluster_cells(sce, lem = "iPCA", dims = "2d", method = "density", name = "iPCA_cluster_2d", num_clust = 8)
+sce <- cluster_cells(sce, lem = "vPCA_Attempt2", dims = "2d", method = "density", name = "vPCA_Attempt2_Cluster", num_clust = 8)
 
 colData(sce)
 
@@ -144,7 +151,6 @@ plot_tsne_metadata(sce, color_by = "iPCA_cluster_2d", facet_by = "Timepoint",  c
 
 ```
 
-
 ## tSNE gene Plot
 
 ```{r}
@@ -156,6 +162,7 @@ plot_tsne_gene(sce, gene = c("Ccr7", "Lcn2")) # NEW
 plot_tsne_gene(sce, gene = c("Tnf"), facet_by = "Timepoint")
 
 ```
+
 ## Violin Plot
 
 ```{r}
