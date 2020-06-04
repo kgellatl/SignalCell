@@ -40,6 +40,10 @@ plot_tsne_gene <- function(input,
     stop("Cannot facet multiple genes.")
   }
 
+  if(!(gene %in% rownames(input))){
+    stop("Gene not found")
+  }
+
   if(is.null(assay)){
     def_assay <- get_def_assay(input)
     input_mat <- assay(input, def_assay)[gene,]
@@ -75,13 +79,11 @@ plot_tsne_gene <- function(input,
 
   g_Dat <- input_mat
   background <- g_Dat[,c("x", "y")]
-  x <- "x"
-  y <- "y"
 
   g_Dat <- g_Dat[which(g_Dat$Expression > 0),]
 
   g <- ggplot(g_Dat)
-  g <- g + geom_point(data = background, aes_string(x = x, y = y), shape = 20, size = size, col = "gray")
+  g <- g + geom_point(data = background, aes(x = x, y = y), shape = 20, size = size, col = "gray")
   g <- g +  scale_color_gradientn(colours=colors)
   g <- g +  geom_point(aes(x=x, y=y, col = Expression), shape=20, size = size)
   if(length(gene > 1)){

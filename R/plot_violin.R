@@ -92,23 +92,17 @@ plot_violin <- function(input,
     summary_data$frac_pos <- -max(g_Dat$Expression)/5
   }
 
-  Expression <- "Expression"
   g <- ggplot(g_Dat)
-  g <- g +  geom_violin(aes_string(x = color_by, y = Expression, col = color_by), size = size,  trim = T, scale = "width")
+  g <- g +  geom_violin(aes_string(x = color_by, y = "Expression", col = color_by), size = size,  trim = T, scale = "width")
   if(number_labels){
-    num_pos <- "num_pos"
-    frac_pos <- "frac_pos"
-    n <- "n"
-    frac <- "frac"
-    g <- g +  geom_text(data = summary_data, aes_string(x = color_by, y = num_pos, label = n), size = size*2)
-    g <- g +  geom_text(data = summary_data, aes_string(x = color_by, y = frac_pos, label = frac), size = size*2)
+    g <- g +  geom_text(data = summary_data, aes_string(x = color_by, y = "num_pos", label = "n"), size = size*2)
+    g <- g +  geom_text(data = summary_data, aes_string(x = color_by, y = "frac_pos", label = "frac"), size = size*2)
   }
   if(jitter){
-    g <- g + geom_jitter(aes_string(x=color_by, y=Expression, col = color_by), width = 0.2, size = size)
+    g <- g + geom_jitter(aes_string(x=color_by, y="Expression", col = color_by), width = 0.2, size = size)
   }
   if(plot_mean){
-    mean <- "mean"
-    g <- g +  geom_point(data = summary_data, aes_string(x = color_by, y = mean), size = size*2)
+    g <- g +  geom_point(data = summary_data, aes_string(x = color_by, y = "mean"), size = size*2)
   }
   if(length(gene > 1)){
     g <- g +  facet_wrap(~gene, ncol = ncol)
@@ -129,4 +123,5 @@ plot_violin <- function(input,
   g <- g + labs(y = assay_name)
   return(g)
 }
+
 

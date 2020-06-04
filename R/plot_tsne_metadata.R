@@ -37,13 +37,17 @@ plot_tsne_metadata <- function(input,
                                xlab = "x",
                                ylab = "y"){
 
+  if(!(color_by %in% names(colData(input)))){
+    stop(paste0("color_by not found, please use one of ", paste0(names(colData(sce)), collapse = ", ")))
+  }
+
   if(!is.null(coords)){
     if(length(coords) == 1){
       input <- set_xy(input, lem = coords)
     } else if (length(coords) == 3) {
       input <- set_xy(input, lem = coords[1], x = as.numeric(coords[2]), as.numeric(coords[3]))
     } else {
-    stop("See set_xy for how to set coords")
+      stop("See set_xy for how to set coords")
     }
   }
 
@@ -57,10 +61,8 @@ plot_tsne_metadata <- function(input,
   background <- g_Dat[,c("x", "y")]
 
   g <- ggplot(g_Dat)
-  x <- "x"
-  y <- "y"
-  g <- g + geom_point(data = background, aes_string(x = x, y = y), shape = 20, size = size, col = "gray")
-  g <- g + geom_point(aes_string(x = x, y = y, col = color_by), shape = 20, size = size)
+  g <- g + geom_point(data = background, aes(x = x, y = y), shape = 20, size = size, col = "gray")
+  g <- g + geom_point(aes_string(x = "x", y = "y", col = color_by), shape = 20, size = size)
   if(!is.null(facet_by)){
     g <- g +  facet_wrap(facets = reformulate(facet_by), ncol = ncol)
   }
@@ -70,7 +72,10 @@ plot_tsne_metadata <- function(input,
   if(class(colData(input)[,color_by]) == "double" || class(colData(input)[,color_by]) == "integer" || class(colData(input)[,color_by]) == "numeric" ){
     g <- g +  scale_color_gradientn(colours=c('blue', 'red', 'yellow'))
   } else {
-    if(all(is.na(colors)) == FALSE){
+    if(!is.null(colors)){
+      if(length(colors) != length(unique(colData(input)[,color_by]))){
+        stop("Must provide colors equal to the length unique entries in color_by")
+      }
       g <- g + scale_color_manual(values = c(colors))
     }
   }
