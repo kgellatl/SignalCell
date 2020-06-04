@@ -134,7 +134,7 @@ dim_reduce <- function(input,
       }
 
       if(maxPC < 2){
-        stop("Percent variance threshold has left than 2 PCs. Please increase this value.")
+        stop("Percent variance threshold has left less than 2 PCs. Please increase this value.")
       }
       vPCA$rotation = vPCA$rotation[,1:maxPC]
       rownames(vPCA$rotation) <- colnames(input)
@@ -146,8 +146,6 @@ dim_reduce <- function(input,
       featureLoadings_lem <- vPCA$x[,1:maxPC]
       factorData_lem <- DataFrame(vPCA$sdev[1:maxPC])
     }
-
-
   }
 
   if(pre_reduce == F){
@@ -157,7 +155,7 @@ dim_reduce <- function(input,
     if(!(lem %in% reducedDimNames(sce))){
       stop(paste0("LEM not found, LEMs available are ", paste0(reducedDimNames(input), collapse = ", ")))
     }
-    print(paste0("Skipping pre_reduce, using ", lem, " within reducedDims()"))
+    print(paste0("Skipping pre_reduce, using ", lem, " within reducedDim()"))
     tsne_input <- reducedDim(input, lem)@sampleFactors
   }
 
@@ -169,7 +167,6 @@ dim_reduce <- function(input,
   tSNE_result <- Rtsne::Rtsne(tsne_input, dims = 2, perplexity = tSNE_perp, theta = 0.5, check_duplicates = F, pca = F, max_iter = iterations, verbose = print_progress)
   set.seed(NULL)
   tSNE_result <- tSNE_result$Y
-
   row.names(tSNE_result) <- rownames(tsne_input)
   colnames(tSNE_result) <- c("x", "y")
   tSNE_result[,"x"] <-  abs(min(tSNE_result[,"x"]))+tSNE_result[,"x"]
@@ -177,39 +174,32 @@ dim_reduce <- function(input,
   tSNE_result[,"y"] <-  abs(min(tSNE_result[,"y"]))+tSNE_result[,"y"]
   tSNE_result[,"y"] <-  tSNE_result[,"y"]/max(tSNE_result[,"y"])
 
-
   colData(input)$x <- tSNE_result[,"x"]
   colData(input)$y <- tSNE_result[,"y"]
 
   if(pre_reduce == F){
-    print(paste0("Updating XY coordinates in ", lem, " reducedDims()"))
-
+    print(paste0("Updating LEM metadata  within ", lem, " reducedDim()"))
     reducedDim(input, lem)@metadata$x <- colData(input)$x
     reducedDim(input, lem)@metadata$y <- colData(input)$y
+    reducedDim(input, lem)@metadata$tSNE_perp <- tSNE_perp
+    reducedDim(input, lem)@metadata$iterations <- iterations
     save_lem <- F
-
   }
 
   if(save_lem){
-
     if(is.null(reducedDim_key)){
       reducedDim_key <- pre_reduce
     }
 
     rownames(featureLoadings_lem) <- genelist
-
     lem <- LinearEmbeddingMatrix(sampleFactors_lem,
                                  featureLoadings_lem,
                                  factorData_lem,
                                  metadata_lem)
-
     lem@metadata$x <- colData(input)$x
     lem@metadata$y <- colData(input)$y
-
     reducedDim(input, type = reducedDim_key) <- lem
-
   }
-
   return(input)
 }
 
