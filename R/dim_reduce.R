@@ -6,6 +6,7 @@
 #' @param genelist the subset of genes to perform dimensionality reduction on
 #' @param assay The assay to operate on. Will default to get_def_assay(input)
 #' @param pre_reduce the algorithm choice for reduction before tSNE (either "ICA", "PCA", "iPCA", or FALSE if you want to reuse).
+#' @param lem if pre_reduce is F, a LEM within reducedDims() must be provided
 #' @param nComp the number of components to reduce too before tSNE, 5-20 recommended.
 #' @param tSNE_perp number of cells expressed above threshold for a given gene, 10-100 recommended.
 #' @param iterations The number of iterations for tSNE to perform.
@@ -26,124 +27,127 @@
 #' ex_sc_example <- dim_reduce(input = ex_sc_example, genelist = gene_subset, pre_reduce = "iPCA", nComp = 15, tSNE_perp = 30, iterations = 500, print_progress=TRUE)
 #'
 dim_reduce <- function(input,
-                        genelist,
-                        assay = NULL,
-                        pre_reduce = "iPCA",
-                        lem = NULL,
-                        nComp = 15,
-                        tSNE_perp = 30,
-                        iterations = 1000,
-                        print_progress=TRUE,
-                        nVar=.85,
-                        log = F,
-                        scale = T,
-                        save_lem = T,
-                        reducedDim_key = NULL,
-                        seed = 100){
+                       genelist = NULL,
+                       assay = NULL,
+                       pre_reduce = "iPCA",
+                       lem = NULL,
+                       nComp = 15,
+                       tSNE_perp = 30,
+                       iterations = 1000,
+                       print_progress=TRUE,
+                       nVar=.85,
+                       log = F,
+                       scale = T,
+                       save_lem = T,
+                       reducedDim_key = NULL,
+                       seed = 100){
 
-  if(is.null(assay)){
-    def_assay <- get_def_assay(input)
-    input_mat <- assay(input, def_assay)[gene_subset,]
-    assay_name <- def_assay
-  } else {
-    if(!(assay%in%names(input@assays))){
-      stop(paste0("Assay not found, assays available are, ", names(input@assays)))
+  if(pre_reduce != F){
+    if(is.null(genelist)){
+      stop("Please provide a genelist")
     }
-    input_mat <- assay(input, assay)[gene_subset,]
-    assay_name <- assay
-  }
-
-  if(!(pre_reduce%in%c("ICA", "PCA", "iPCA", "vPCA", FALSE))){
-    stop("Pre-reduce muse be one of ICA, PCA, iPCA, vPCA, or FALSE")
-  }
-
-  args_list <- list(assay_name, genelist, pre_reduce, nComp, tSNE_perp, iterations, nVar, log, scale)
-  names(args_list) <- c("assay_name", "genelist", "pre_reduce", "nComp", "tSNE_perp", "iterations", "nVar", "log", "scale")
-  metadata_lem <- args_list
-
-  if(log){
-    input_mat <- log2(input_mat+2)-1
-  }
-  if(scale){
-    input_mat <- scale(input_mat)
-  }
-
-  if(pre_reduce == "ICA"){
-    if(print_progress == TRUE){
-      print("Starting ICA")
-    }
-    ica <- fastICA::fastICA(t(input_mat), n.comp=(nComp), alg.typ = 'parallel', fun='logcosh', alpha = 1.0, method = 'C', verbose = print_progress)
-    colnames(ica$A) <- gene_subset
-    rownames(ica$S) <- colnames(input)
-    colnames(ica$S) <- paste0("IC_Comp", seq(1:ncol(ica$S)))
-
-    tsne_input = ica$S
-
-    sampleFactors_lem <- ica$S
-    featureLoadings_lem <- t(ica$A)
-    factorData_lem <- DataFrame(ica$W)
-  }
-
-  if(pre_reduce == "PCA"){
-    if(print_progress == TRUE){
-      print("Starting PCA")
-    }
-    PCA <- irlba::prcomp_irlba(t(input_mat), nComp, center = F)
-    rownames(PCA$x) <- colnames(input)
-    colnames(PCA$x) <- paste0("PC_Comp", seq(1:ncol(PCA$x)))
-
-    tsne_input = PCA$x
-
-    sampleFactors_lem <- PCA$x
-    featureLoadings_lem <- PCA$rotation
-    factorData_lem <- DataFrame(PCA$sdev)
-  }
-
-  if(pre_reduce == "iPCA"){
-    if(print_progress == TRUE){
-      print("Starting iPCA")
-    }
-    iPCA <- irlba::prcomp_irlba(input_mat, nComp, center = F)
-    rownames(iPCA$rotation) <- colnames(input)
-    colnames(iPCA$rotation) <- paste0("iPC_Comp", seq(1:ncol(iPCA$rotation)))
-
-    tsne_input = iPCA$rotation
-
-    sampleFactors_lem <- iPCA$rotation
-    featureLoadings_lem <- iPCA$x
-    factorData_lem <- DataFrame(iPCA$sdev)
-  }
-
-  if(pre_reduce == "vPCA"){
-    if(print_progress == TRUE){
-      print("Starting vPCA")
-    }
-    vPCA <- irlba::prcomp_irlba(input_mat, n = nComp)
-    # sum components until variance is >= x%
-    var = vPCA$sdev^2/sum(vPCA$sdev^2)
-    totalvar = var[1]
-    maxPC = 1
-    while (totalvar < nVar) {
-      maxPC=maxPC+1
-      totalvar = sum(var[1:maxPC])
+    if(is.null(assay)){
+      def_assay <- get_def_assay(input)
+      input_mat <- assay(input, def_assay)[gene_subset,]
+      assay_name <- def_assay
+    } else {
+      if(!(assay%in%names(input@assays))){
+        stop(paste0("Assay not found, assays available are, ", names(input@assays)))
+      }
+      input_mat <- assay(input, assay)[gene_subset,]
+      assay_name <- assay
     }
 
-    if(maxPC < 2){
-      stop("Percent variance threshold has left than 2 PCs. Please increase this value.")
+    if(!(pre_reduce%in%c("ICA", "PCA", "iPCA", "vPCA", FALSE))){
+      stop("Pre-reduce muse be one of ICA, PCA, iPCA, vPCA, or FALSE")
     }
-    vPCA$rotation = vPCA$rotation[,1:maxPC]
-    rownames(vPCA$rotation) <- colnames(input)
-    colnames(vPCA$rotation) <- paste0("iPC_Comp", seq(1:ncol(vPCA$rotation)))
 
-    tsne_input = vPCA$rotation
+    args_list <- list(assay_name, genelist, pre_reduce, nComp, tSNE_perp, iterations, nVar, log, scale)
+    names(args_list) <- c("assay_name", "genelist", "pre_reduce", "nComp", "tSNE_perp", "iterations", "nVar", "log", "scale")
+    metadata_lem <- args_list
 
-    sampleFactors_lem <- vPCA$rotation
-    featureLoadings_lem <- vPCA$x[,1:maxPC]
-    factorData_lem <- DataFrame(vPCA$sdev[1:maxPC])
-  }
+    if(log){
+      input_mat <- log2(input_mat+2)-1
+    }
+    if(scale){
+      input_mat <- scale(input_mat)
+    }
 
-  if(print_progress == TRUE){
-    print("Starting tSNE")
+    if(pre_reduce == "ICA"){
+      if(print_progress == TRUE){
+        print("Starting ICA")
+      }
+      ica <- fastICA::fastICA(t(input_mat), n.comp=(nComp), alg.typ = 'parallel', fun='logcosh', alpha = 1.0, method = 'C', verbose = print_progress)
+      colnames(ica$A) <- gene_subset
+      rownames(ica$S) <- colnames(input)
+      colnames(ica$S) <- paste0("IC_Comp", seq(1:ncol(ica$S)))
+
+      tsne_input = ica$S
+
+      sampleFactors_lem <- ica$S
+      featureLoadings_lem <- t(ica$A)
+      factorData_lem <- DataFrame(ica$W)
+    }
+
+    if(pre_reduce == "PCA"){
+      if(print_progress == TRUE){
+        print("Starting PCA")
+      }
+      PCA <- irlba::prcomp_irlba(t(input_mat), nComp, center = F)
+      rownames(PCA$x) <- colnames(input)
+      colnames(PCA$x) <- paste0("PC_Comp", seq(1:ncol(PCA$x)))
+
+      tsne_input = PCA$x
+
+      sampleFactors_lem <- PCA$x
+      featureLoadings_lem <- PCA$rotation
+      factorData_lem <- DataFrame(PCA$sdev)
+    }
+
+    if(pre_reduce == "iPCA"){
+      if(print_progress == TRUE){
+        print("Starting iPCA")
+      }
+      iPCA <- irlba::prcomp_irlba(input_mat, nComp, center = F)
+      rownames(iPCA$rotation) <- colnames(input)
+      colnames(iPCA$rotation) <- paste0("iPC_Comp", seq(1:ncol(iPCA$rotation)))
+
+      tsne_input = iPCA$rotation
+
+      sampleFactors_lem <- iPCA$rotation
+      featureLoadings_lem <- iPCA$x
+      factorData_lem <- DataFrame(iPCA$sdev)
+    }
+
+    if(pre_reduce == "vPCA"){
+      if(print_progress == TRUE){
+        print("Starting vPCA")
+      }
+      vPCA <- irlba::prcomp_irlba(input_mat, n = nComp)
+      # sum components until variance is >= x%
+      var = vPCA$sdev^2/sum(vPCA$sdev^2)
+      totalvar = var[1]
+      maxPC = 1
+      while (totalvar < nVar) {
+        maxPC=maxPC+1
+        totalvar = sum(var[1:maxPC])
+      }
+
+      if(maxPC < 2){
+        stop("Percent variance threshold has left than 2 PCs. Please increase this value.")
+      }
+      vPCA$rotation = vPCA$rotation[,1:maxPC]
+      rownames(vPCA$rotation) <- colnames(input)
+      colnames(vPCA$rotation) <- paste0("iPC_Comp", seq(1:ncol(vPCA$rotation)))
+
+      tsne_input = vPCA$rotation
+
+      sampleFactors_lem <- vPCA$rotation
+      featureLoadings_lem <- vPCA$x[,1:maxPC]
+      factorData_lem <- DataFrame(vPCA$sdev[1:maxPC])
+    }
+
+
   }
 
   if(pre_reduce == F){
@@ -153,8 +157,12 @@ dim_reduce <- function(input,
     if(!(lem %in% reducedDimNames(sce))){
       stop(paste0("LEM not found, LEMs available are ", paste0(reducedDimNames(input), collapse = ", ")))
     }
+    print(paste0("Skipping pre_reduce, using ", lem, " within reducedDims()"))
     tsne_input <- reducedDim(input, lem)@sampleFactors
-    save_lem <- F
+  }
+
+  if(print_progress == TRUE){
+    print("Starting tSNE")
   }
 
   set.seed(seed)
@@ -174,11 +182,13 @@ dim_reduce <- function(input,
   colData(input)$y <- tSNE_result[,"y"]
 
   if(pre_reduce == F){
+    print(paste0("Updating XY coordinates in ", lem, " reducedDims()"))
+
     reducedDim(input, lem)@metadata$x <- colData(input)$x
     reducedDim(input, lem)@metadata$y <- colData(input)$y
+    save_lem <- F
+
   }
-
-
 
   if(save_lem){
 

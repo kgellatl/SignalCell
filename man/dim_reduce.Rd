@@ -6,9 +6,10 @@
 \usage{
 dim_reduce(
   input,
-  genelist,
+  genelist = NULL,
   assay = NULL,
   pre_reduce = "iPCA",
+  lem = NULL,
   nComp = 15,
   tSNE_perp = 30,
   iterations = 1000,
@@ -28,7 +29,9 @@ dim_reduce(
 
 \item{assay}{The assay to operate on. Will default to get_def_assay(input)}
 
-\item{pre_reduce}{the algorithm choice for reduction before tSNE (either "ICA", "PCA", "iPCA").}
+\item{pre_reduce}{the algorithm choice for reduction before tSNE (either "ICA", "PCA", "iPCA", or FALSE if you want to reuse).}
+
+\item{lem}{if pre_reduce is F, a LEM within reducedDims() must be provided}
 
 \item{nComp}{the number of components to reduce too before tSNE, 5-20 recommended.}
 

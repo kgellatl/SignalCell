@@ -97,7 +97,8 @@ gene_subset <- get_var_genes(sce, method = "Malhanobis", cutoff = 0.85)
 
 ```{r}
 
-sce <- dim_reduce(sce, genelist = gene_subset, pre_reduce = "iPCA", nComp = 10, save_lem = T)  # save_lem!!!
+sce <- dim_reduce(sce, genelist = gene_subset, pre_reduce = "iPCA", save_lem = T)  # save_lem!!!
+
 colData(sce)
 int_colData(sce)
 
@@ -107,15 +108,15 @@ head(lem@featureLoadings)
 head(lem@factorData)
 lem@metadata[1:9]
 
-sce <- dim_reduce(sce, genelist = gene_subset, pre_reduce = "vPCA")
-sce <- dim_reduce(sce, genelist = gene_subset, pre_reduce = "PCA", reducedDim_key = "PCA_Param_15", nComp = 10, tSNE_perp = 30)
-reducedDims(sce)
+sce <- dim_reduce(sce, genelist = gene_subset, pre_reduce = "vPCA", reducedDim_key = "vPCA_Attempt2")
+reducedDimNames(sce)
+head(colData(sce))[,c("x", "y")]
 
-sce <- set_xy(sce, "PCA_Param_15", x = 1, y = 2)
-head(colData(sce))
+sce <- dim_reduce(sce, pre_reduce = F, tSNE_perp = 50, lem = "vPCA_Attempt2")
+head(colData(sce))[,c("x", "y")]
 
 sce <- set_xy(sce, "iPCA")
-head(colData(sce))
+head(colData(sce))[,c("x", "y")]
 
 ```
 
