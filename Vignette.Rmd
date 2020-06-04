@@ -13,7 +13,6 @@ output:
 ```{r setup, include=FALSE, warning=FALSE, error=FALSE}
 knitr::opts_chunk$set(echo = TRUE, comment = "")
 library(SignalCell)
-
 ```
 
 ## Load Data
@@ -64,8 +63,7 @@ sce$Timepoint <- "0hr"
 sce$Timepoint[grep("1", colnames(sce))] <- "1hr"
 sce$Timepoint[grep("4", colnames(sce))] <- "4hr"
 
-sce$UMI_sum_raw <- libsizes
-
+sce <- calc_libsize(sce, assay = "counts", label = "UMI_sum")
 colData(sce)
 sce
 
@@ -75,7 +73,7 @@ sce
 
 ```{r}
 
-counts <- apply(sce@assays@data$counts, 1, function(c)sum(c!=0))
+counts <- apply(assay(sce, "counts"), 1, function(c)sum(c!=0))
 rowData(sce)$gene_counts <- counts
 rowData(sce) # use for vector annotations
 sce
@@ -147,7 +145,7 @@ colData(sce)
 
 plot_tsne_metadata(sce, color_by = "Cluster")
 
-plot_tsne_metadata(sce, color_by = "iPCA_cluster_2d", facet_by = "Timepoint",  coords = c("iPCA", 1, 2))
+plot_tsne_metadata(sce, color_by = "Cluster", facet_by = "Timepoint",  coords = c("iPCA", 1, 2))
 
 ```
 
@@ -157,7 +155,7 @@ plot_tsne_metadata(sce, color_by = "iPCA_cluster_2d", facet_by = "Timepoint",  c
 
 plot_tsne_gene(sce, gene = "Ccr7")
 
-plot_tsne_gene(sce, gene = c("Ccr7", "Lcn2")) # NEW
+plot_tsne_gene(sce, gene = c("Ccr7", "Lcn2")) 
 
 plot_tsne_gene(sce, gene = c("Tnf"), facet_by = "Timepoint")
 
@@ -171,7 +169,7 @@ plot_violin(sce, gene = "Ccr7", color_by = "Cluster")
 
 plot_violin(sce, gene = "Ccr7", color_by = "Cluster", assay = "counts")
 
-plot_violin(sce, gene = c("Ccr7", "Lcn2"), color_by = "Cluster")
+plot_violin(sce, gene = c("Ccr7", "Lcn2"), color_by = "Cluster") # NEW
 
 plot_violin(sce, gene = c("Tnf"), facet_by = "Timepoint", color_by = "Cluster")
 
