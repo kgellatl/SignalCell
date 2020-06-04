@@ -11,8 +11,8 @@ library(SignalCell)
 ## Load Data
 
 ```{r}
-load("~/Dropbox (UMass Medical School)/UMASS/GitHub/R/SignalCell/data/tst_dat.Rdata")
-sparse_dat <- as(tst_dat, "dgCMatrix")
+# load("~/Dropbox (UMass Medical School)/UMASS/GitHub/R/SignalCell/data/tst_dat.Rdata")
+# sparse_dat <- as(tst_dat, "dgCMatrix")
 
 load("~/Dropbox (UMass Medical School)/Lab_inDrop/mDC_vignette_data/mDC_dat.Rdata")
 sparse_dat <- as(mDC_dat, "dgCMatrix")
@@ -71,7 +71,6 @@ sce
 counts <- apply(sce@assays@data$counts, 1, function(c)sum(c!=0))
 rowData(sce)$gene_counts <- counts
 rowData(sce) # use for vector annotations
-sce@elementMetadata # use for bulk values??
 sce
 
 ```
@@ -110,9 +109,10 @@ lem@metadata[1:9]
 
 sce <- dim_reduce(sce, genelist = gene_subset, pre_reduce = "vPCA", reducedDim_key = "vPCA_Attempt2")
 reducedDimNames(sce)
-head(colData(sce))[,c("x", "y")]
 
 sce <- dim_reduce(sce, pre_reduce = F, tSNE_perp = 50, lem = "vPCA_Attempt2")
+
+sce <- set_xy(sce, "iPCA", x = 1, y = 2)
 head(colData(sce))[,c("x", "y")]
 
 sce <- set_xy(sce, "iPCA")
@@ -127,6 +127,8 @@ head(colData(sce))[,c("x", "y")]
 sce <- cluster_cells(sce, lem = "iPCA", dims = "Comp", method = "spectral", num_clust = 6)
 
 sce <- cluster_cells(sce, lem = "iPCA", dims = "2d", method = "density", name = "iPCA_cluster_2d", num_clust = 8)
+
+colData(sce)
 
 ```
 
@@ -146,8 +148,10 @@ plot_tsne_metadata(sce, color_by = "iPCA_cluster_2d", facet_by = "Timepoint",  c
 ## tSNE gene Plot
 
 ```{r}
+
 plot_tsne_gene(sce, gene = "Ccr7")
-plot_tsne_gene(sce, gene = c("Ccr7", "Lcn2"))
+
+plot_tsne_gene(sce, gene = c("Ccr7", "Lcn2")) # NEW
 
 plot_tsne_gene(sce, gene = c("Tnf"), facet_by = "Timepoint")
 
@@ -157,13 +161,21 @@ plot_tsne_gene(sce, gene = c("Tnf"), facet_by = "Timepoint")
 ```{r}
 
 plot_violin(sce, gene = "Ccr7", color_by = "Cluster")
-plot_violin(sce, gene = "Ccr7", color_by = "Cluster", assay = "counts")
-plot_violin(sce, gene = c("Ccr7", "Lcn2"), color_by = "Cluster")
-plot_violin(sce, gene = c("Tnf"), facet_by = "Timepoint", color_by = "Cluster")
 
+plot_violin(sce, gene = "Ccr7", color_by = "Cluster", assay = "counts")
+
+plot_violin(sce, gene = c("Ccr7", "Lcn2"), color_by = "Cluster")
+
+plot_violin(sce, gene = c("Tnf"), facet_by = "Timepoint", color_by = "Cluster")
 
 ```
 
 # Bulk Analysis
+
+```{r}
+
+sce@elementMetadata # use for bulk values??
+
+```
 
 
