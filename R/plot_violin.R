@@ -80,7 +80,7 @@ plot_violin <- function(input,
   }
 
   summary_dat = function(x) {
-    g_Dat %>%
+    x %>%
       group_by_at(sum_groups) %>%
       summarise(mean = mean(Expression), n = n(), frac = frac_finder(Expression), .groups = "rowwise")
   }
@@ -108,8 +108,15 @@ plot_violin <- function(input,
     g <- g +  facet_wrap(~gene, ncol = ncol)
   }
   if(!is.null(facet_by)){
-    g <- g +  facet_wrap(facets = reformulate(facet_by), ncol = ncol)
+    if(length(facet_by) == 2){
+      g <- g +  facet_grid(facets = reformulate(facet_by))
+    } else {
+      g <- g +  facet_wrap(facets = reformulate(facet_by), ncol = ncol)
+    }
   }
+
+
+
   g <- g +  theme_classic()
   g <- g +  theme(plot.title = element_text(size = text_sizes[1]), axis.title = element_text(size = text_sizes[2]), axis.text = element_text(size = text_sizes[3]), legend.title = element_text(size = text_sizes[4]), legend.text=element_text(size=text_sizes[5]))
   g <- g +  theme(legend.position = "bottom", plot.title = element_text(hjust = 0.5))
