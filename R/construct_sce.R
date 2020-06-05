@@ -11,12 +11,6 @@
 
 construct_sce <- function(input) {
 
-  type <- class(input)
-
-  if(type != "dgCMatrix"){
-    stop('Please convert input to a sparse matrix,
-         sparse_mat <- as("input", "dgCMatrix")')
-  }
   sce <- SingleCellExperiment(list(counts=input))
 
   sce <- set_def_assay(sce, "counts")
