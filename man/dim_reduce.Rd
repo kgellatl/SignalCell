@@ -40,12 +40,6 @@ dim_reduce(
 \item{reducedDim_key}{The name of the LEM within ReducedDim slot of SCE}
 
 \item{seed}{For tSNE, the seed. Can set to NULL if desired.}
-
-\item{lem}{if pre_reduce is F, a LEM within reducedDims() must be provided}
-
-\item{tSNE_perp}{number of cells expressed above threshold for a given gene, 10-100 recommended.}
-
-\item{iterations}{The number of iterations for tSNE to perform.}
 }
 \description{
 This function will do dimensionality reduction.

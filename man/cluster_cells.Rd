@@ -9,6 +9,7 @@ cluster_cells(
   lem,
   dims,
   method,
+  xy = NULL,
   num_clust = NULL,
   name = "Cluster",
   s = 2
@@ -22,6 +23,8 @@ cluster_cells(
 \item{dims}{either "2d" or "Comp"}
 
 \item{method}{can either be "spectral" or "density" which is on 2d}
+
+\item{xy}{if method is 2D, this is the columns of colData() to use}
 
 \item{num_clust}{the number of clusters. Required for spectral but optional for density.}
 
