@@ -6,10 +6,7 @@
 #' @param genelist the subset of genes to perform dimensionality reduction on
 #' @param assay The assay to operate on. Will default to get_def_assay(input)
 #' @param pre_reduce the algorithm choice for reduction before tSNE (either "ICA", "PCA", "iPCA", or FALSE if you want to reuse).
-#' @param lem if pre_reduce is F, a LEM within reducedDims() must be provided
 #' @param nComp the number of components to reduce too before tSNE, 5-20 recommended.
-#' @param tSNE_perp number of cells expressed above threshold for a given gene, 10-100 recommended.
-#' @param iterations The number of iterations for tSNE to perform.
 #' @param nVar cutoff for percent of variance explained from PCs
 #' @param log Whether or not to log  the input assay
 #' @param scale Whether or not to scale the input assay
