@@ -9,11 +9,7 @@ dim_reduce(
   genelist = NULL,
   assay = NULL,
   pre_reduce = "iPCA",
-  lem = NULL,
   nComp = 15,
-  tSNE_perp = 30,
-  iterations = 500,
-  print_progress = TRUE,
   nVar = 0.85,
   log = F,
   scale = T,
@@ -31,15 +27,7 @@ dim_reduce(
 
 \item{pre_reduce}{the algorithm choice for reduction before tSNE (either "ICA", "PCA", "iPCA", or FALSE if you want to reuse).}
 
-\item{lem}{if pre_reduce is F, a LEM within reducedDims() must be provided}
-
 \item{nComp}{the number of components to reduce too before tSNE, 5-20 recommended.}
-
-\item{tSNE_perp}{number of cells expressed above threshold for a given gene, 10-100 recommended.}
-
-\item{iterations}{The number of iterations for tSNE to perform.}
-
-\item{print_progress}{will print progress if TRUE}
 
 \item{nVar}{cutoff for percent of variance explained from PCs}
 
@@ -52,6 +40,12 @@ dim_reduce(
 \item{reducedDim_key}{The name of the LEM within ReducedDim slot of SCE}
 
 \item{seed}{For tSNE, the seed. Can set to NULL if desired.}
+
+\item{lem}{if pre_reduce is F, a LEM within reducedDims() must be provided}
+
+\item{tSNE_perp}{number of cells expressed above threshold for a given gene, 10-100 recommended.}
+
+\item{iterations}{The number of iterations for tSNE to perform.}
 }
 \description{
 This function will do dimensionality reduction.
