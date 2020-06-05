@@ -40,7 +40,8 @@ plot_tsne_gene <- function(input,
     stop("Cannot facet multiple genes.")
   }
 
-  if(!(gene %in% rownames(input))){
+
+  if(length(intersect(gene, rownames(input))) != length(gene)){
     stop("Gene not found")
   }
 
