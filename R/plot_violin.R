@@ -37,16 +37,6 @@ plot_violin <- function(input,
                         ncol = 2,
                         text_sizes = c(20,10,5,10,5,5)) {
 
-  frac_finder <- function(x){
-    length(which(x>0))/length(x)
-  }
-
-  summary_dat = function(x) {
-    g_Dat %>%
-      group_by_at(sum_groups) %>%
-      summarise(mean = mean(Expression), n = n(), frac = frac_finder(Expression), .groups = "rowwise")
-  }
-
   if(length(gene) > 1 && !(is.null(facet_by))){
     stop("Cannot facet multiple genes.")
   }
@@ -63,16 +53,6 @@ plot_violin <- function(input,
     assay_name <- assay
   }
 
-  if(!is.null(facet_by)){
-    sum_groups <- c(color_by, facet_by)
-  } else {
-    if(length(gene) >1 ){
-      sum_groups <- c(color_by, "gene")
-    } else {
-      sum_groups <- color_by
-    }
-  }
-
   input_mat <- as.matrix(input_mat)
   input_mat <- as.data.frame(input_mat)
   if(length(gene) > 1){
@@ -84,6 +64,26 @@ plot_violin <- function(input,
   input_mat <- pivot_longer(input_mat, cols = 1:length(gene), names_to = "gene", values_to = "Expression")
 
   g_Dat <- input_mat
+
+  if(!is.null(facet_by)){
+    sum_groups <- c(color_by, facet_by)
+  } else {
+    if(length(gene) >1 ){
+      sum_groups <- c(color_by, "gene")
+    } else {
+      sum_groups <- color_by
+    }
+  }
+
+  frac_finder <- function(x){
+    length(which(x>0))/length(x)
+  }
+
+  summary_dat = function(x) {
+    g_Dat %>%
+      group_by_at(sum_groups) %>%
+      summarise(mean = mean(Expression), n = n(), frac = frac_finder(Expression), .groups = "rowwise")
+  }
 
   if(number_labels || plot_mean){
     summary_data <- summary_dat(g_Dat)
