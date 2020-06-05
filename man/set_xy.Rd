@@ -11,12 +11,12 @@ set_xy(input, lem, x = "x", y = "y")
 
 \item{lem}{the LEM within reducedDims}
 
-\item{x}{The x values for 2D representation. Can be character x or a numeric column of lem@sampleFactors}
+\item{x}{The x values for 2D representation. Can be character x or a numeric column of sampleFactors(lem)}
 
-\item{y}{The y values for 2D representation. Can be character y or a numeric column of lem@sampleFactors}
+\item{y}{The y values for 2D representation. Can be character y or a numeric column of sampleFactors(lem)}
 }
 \description{
-This will set default X and Y coordinates based on the LEM results within reducedDims(sce)
+This will set default X and Y coordinates based on the LEM results within reducedDim(sce)
 }
 \details{
 
