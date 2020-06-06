@@ -13,7 +13,6 @@ dim_reduce(
   nVar = 0.85,
   log = F,
   scale = T,
-  save_lem = T,
   reducedDim_key = NULL,
   seed = 100
 )
@@ -34,8 +33,6 @@ dim_reduce(
 \item{log}{Whether or not to log  the input assay}
 
 \item{scale}{Whether or not to scale the input assay}
-
-\item{save_lem}{Whether or not to write result to ReducedDim slot of SCE}
 
 \item{reducedDim_key}{The name of the LEM within ReducedDim slot of SCE}
 

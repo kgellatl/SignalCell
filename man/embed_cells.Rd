@@ -13,7 +13,7 @@ embed_cells(
   tSNE_perp = 30,
   iterations = 500,
   write_colData = T,
-  colData_labs = c("x", "y"),
+  colData_labs = NULL,
   seed = 100,
   print_progress = T
 )
@@ -42,7 +42,7 @@ embed_cells(
 \item{print_progress}{will print progress if TRUE}
 }
 \description{
-This function will do dimensionality reduction.
+This function will embed cells using sampleFactors() within reducedDim()
 }
 \details{
 

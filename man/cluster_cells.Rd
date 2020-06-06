@@ -10,6 +10,7 @@ cluster_cells(
   dims,
   method,
   embedding = NULL,
+  xy = NULL,
   num_clust = NULL,
   name = "Cluster",
   s = 2
