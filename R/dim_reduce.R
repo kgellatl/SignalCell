@@ -10,7 +10,6 @@
 #' @param nVar cutoff for percent of variance explained from PCs
 #' @param log Whether or not to log  the input assay
 #' @param scale Whether or not to scale the input assay
-#' @param save_lem Whether or not to write result to ReducedDim slot of SCE
 #' @param reducedDim_key The name of the LEM within ReducedDim slot of SCE
 #' @param seed For tSNE, the seed. Can set to NULL if desired.
 #' @importFrom fastICA fastICA
@@ -30,7 +29,6 @@ dim_reduce <- function(input,
                        nVar=.85,
                        log = F,
                        scale = T,
-                       save_lem = T,
                        reducedDim_key = NULL,
                        seed = 100){
 
@@ -119,18 +117,6 @@ dim_reduce <- function(input,
     factorData_lem <- DataFrame(vPCA$sdev[1:maxPC])
   }
 
-  if(save_lem){
-    if(is.null(reducedDim_key)){
-      reducedDim_key <- pre_reduce
-    }
-
-    rownames(featureLoadings_lem) <- genelist
-    lem <- LinearEmbeddingMatrix(sampleFactors_lem,
-                                 featureLoadings_lem,
-                                 factorData_lem,
-                                 metadata_lem)
-    reducedDim(input, type = reducedDim_key) <- lem
-  }
   return(input)
 }
 
