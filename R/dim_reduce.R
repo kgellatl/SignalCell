@@ -4,8 +4,8 @@
 #'
 #' @param input the input sce
 #' @param genelist the subset of genes to perform dimensionality reduction on
-#' @param assay The assay to operate on. Will default to get_def_assay(input)
 #' @param pre_reduce the algorithm choice for reduction before tSNE (either "ICA", "PCA", "iPCA", or FALSE if you want to reuse).
+#' @param assay The assay to operate on. Will default to get_def_assay(input)
 #' @param nComp the number of components to reduce too before tSNE, 5-20 recommended.
 #' @param nVar cutoff for percent of variance explained from PCs
 #' @param log Whether or not to log  the input assay
@@ -23,9 +23,9 @@
 #' ex_sc_example <- dim_reduce(input = ex_sc_example, genelist = gene_subset, pre_reduce = "iPCA", nComp = 15, tSNE_perp = 30, iterations = 500, print_progress=TRUE)
 #'
 dim_reduce <- function(input,
-                       genelist = NULL,
+                       genelist,
+                       pre_reduce,
                        assay = NULL,
-                       pre_reduce = "iPCA",
                        nComp = 15,
                        nVar=.85,
                        log = F,
@@ -34,9 +34,6 @@ dim_reduce <- function(input,
                        reducedDim_key = NULL,
                        seed = 100){
 
-  if(is.null(genelist)){
-    stop("Please provide a genelist")
-  }
   if(is.null(assay)){
     def_assay <- get_def_assay(input)
     input_mat <- assay(input, def_assay)[gene_subset,]
@@ -56,8 +53,9 @@ dim_reduce <- function(input,
   args_list <- list(assay_name, genelist, pre_reduce, nComp, nVar, log, scale)
   names(args_list) <- c("assay_name", "genelist", "pre_reduce", "nComp", "nVar", "log", "scale")
   args_list <- list(args_list)
-  names(args_list) <- "lem_parameters"
-  metadata_lem <- args_list
+  names(args_list) <- "parameters"
+  metadata_lem <- list(args_list, list())
+  names(metadata_lem) <- c("lem", "embeddings")
 
   if(log){
     input_mat <- log2(input_mat+2)-1
@@ -78,7 +76,7 @@ dim_reduce <- function(input,
   }
 
   if(pre_reduce == "PCA"){
-    PCA <- irlba::prcomp_irlba(t(input_mat), nComp, center = F)
+    PCA <- irlba::prcomp_irlba(t(input_mat), nComp)
     rownames(PCA$x) <- colnames(input)
     colnames(PCA$x) <- paste0("PC_Comp", seq(1:ncol(PCA$x)))
 
@@ -88,10 +86,9 @@ dim_reduce <- function(input,
   }
 
   if(pre_reduce == "iPCA"){
-    iPCA <- irlba::prcomp_irlba(input_mat, nComp, center = F)
+    iPCA <- irlba::prcomp_irlba(input_mat, nComp)
     rownames(iPCA$rotation) <- colnames(input)
     colnames(iPCA$rotation) <- paste0("iPC_Comp", seq(1:ncol(iPCA$rotation)))
-
 
     sampleFactors_lem <- iPCA$rotation
     featureLoadings_lem <- iPCA$x
@@ -112,6 +109,7 @@ dim_reduce <- function(input,
     if(maxPC < 2){
       stop("Percent variance threshold has left less than 2 PCs. Please increase this value.")
     }
+
     vPCA$rotation = vPCA$rotation[,1:maxPC]
     rownames(vPCA$rotation) <- colnames(input)
     colnames(vPCA$rotation) <- paste0("iPC_Comp", seq(1:ncol(vPCA$rotation)))

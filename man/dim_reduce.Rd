@@ -6,9 +6,9 @@
 \usage{
 dim_reduce(
   input,
-  genelist = NULL,
+  genelist,
+  pre_reduce,
   assay = NULL,
-  pre_reduce = "iPCA",
   nComp = 15,
   nVar = 0.85,
   log = F,
@@ -23,9 +23,9 @@ dim_reduce(
 
 \item{genelist}{the subset of genes to perform dimensionality reduction on}
 
-\item{assay}{The assay to operate on. Will default to get_def_assay(input)}
-
 \item{pre_reduce}{the algorithm choice for reduction before tSNE (either "ICA", "PCA", "iPCA", or FALSE if you want to reuse).}
+
+\item{assay}{The assay to operate on. Will default to get_def_assay(input)}
 
 \item{nComp}{the number of components to reduce too before tSNE, 5-20 recommended.}
 
