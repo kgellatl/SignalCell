@@ -1,6 +1,6 @@
 #' Embed Cells
 #'
-#' This function will do dimensionality reduction.
+#' This function will embed cells using sampleFactors() within reducedDim()
 #'
 #' @param input the input sce
 #' @param lem a LEM within reducedDims() must be provided
