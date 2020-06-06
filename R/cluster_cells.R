@@ -3,10 +3,10 @@
 #' This will perform clustering on your single cell data.
 #'
 #' @param input the input ex_sc
-#' @param lem the LEM within ReducedDims slot
+#' @param lem the LEM within ReducedDims()
 #' @param dims either "2d" or "Comp"
 #' @param method can either be "spectral" or "density" which is on 2d
-#' @param xy if method is 2D, this is the columns of colData() to use
+#' @param embedding if method is 2D, an embedding must be provided
 #' @param num_clust the number of clusters. Required for spectral but optional for density.
 #' @param name name of the colData cluster column
 #' @param s the number of standard deviations from the curve to select cluster centers
@@ -22,14 +22,11 @@ cluster_cells <- function(input,
                           lem,
                           dims,
                           method,
+                          embedding = NULL,
                           xy = NULL,
                           num_clust = NULL,
                           name = "Cluster",
                           s=2) {
-
-  if(!(lem %in% reducedDimNames(sce))){
-    stop(paste0("LEM not found, LEMs available are ", paste0(reducedDimNames(input), collapse = ", ")))
-  }
 
   if(!(dims %in% c("2d", "Comp"))){
     stop("dims must be either '2d' or 'Comp'")
@@ -39,20 +36,29 @@ cluster_cells <- function(input,
     stop("method must be either 'spectral' or 'density'")
   }
 
-  dim_dat <- reducedDim(input, lem)
+  if(dims == "Comp") {
+    if(!(lem %in% reducedDimNames(sce))){
+      stop(paste0("LEM not found, LEMs available are ", paste0(reducedDimNames(input), collapse = ", ")))
+    }
+    dim_dat <- reducedDim(input, lem)
+    tocluster <- sampleFactors(dim_dat)
+  }
+
 
   if(dims == "2d"){
-    if(is.null(xy)){
-      xy[1] <- "x"
-      xy[2] <- "y"
+    if(is.null(embedding) && is.null(xy)){
+      stop("Provide an LEM and associated embedding for 2d clustering, or columns of colData()")
     }
-    x <- metadata(dim_dat)[,xy[1]]
-    y <- metadata(dim_dat)[,xy[2]]
-    tocluster <- matrix(c(x,y), ncol = 2)
-    rownames(tocluster) <- colnames(input)
-  } else {
-    tocluster <- dim_dat@sampleFactors
+    if(!is.null(xy)){
+      if(!(xy[1] %in% names(colData(input))) || !(xy[2] %in% names(colData(input)))){
+        stop("Columns not found in colData()")
+      }
+      tocluster <- colData(input)[,xy]
+    } else {
+      tocluster <- embedding(input, lem, embedding)
+    }
   }
+
 
   if(method == "spectral"){
     if(is.null(num_clust)){
@@ -92,8 +98,7 @@ cluster_cells <- function(input,
     sc_clusters = densityClust::findClusters(clust_tSNE, peaks = cellidx)
     sc_clusters <- sc_clusters$clusters
   }
-
   colData(input)[name] <- paste0("Cluster_", sc_clusters)
-  return(input)
 
+  return(input)
 }
