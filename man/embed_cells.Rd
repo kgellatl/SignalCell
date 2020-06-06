@@ -7,13 +7,13 @@
 embed_cells(
   input,
   lem,
-  embedding_key,
+  embedding_key = NULL,
   method = "tSNE",
   comp_select = NULL,
   tSNE_perp = 30,
   iterations = 500,
-  write_colDat = T,
-  colDat_labs = c("x", "y"),
+  write_colData = T,
+  colData_labs = c("x", "y"),
   seed = 100,
   print_progress = T
 )
@@ -33,9 +33,9 @@ embed_cells(
 
 \item{iterations}{The number of iterations for tSNE to perform.}
 
-\item{write_colDat}{whether or not to write the embedding to colData}
+\item{write_colData}{whether or not to write the embedding to colData}
 
-\item{colDat_labs}{a vector of length 2 for the names of the X and Y colnames within colData()}
+\item{colData_labs}{a vector of length 2 for the names of the X and Y colnames within colData()}
 
 \item{seed}{For tSNE, the seed. Can set to NULL if desired.}
 
