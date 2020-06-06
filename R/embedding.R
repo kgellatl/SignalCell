@@ -22,6 +22,7 @@ embedding <- function(input,
   }
 
   dims <- metadata(reducedDim(input, lem))$embedding[[embedding]]$embedding
+  dims <- DataFrame(dims)
   return(dims)
 }
 
