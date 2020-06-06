@@ -10,7 +10,7 @@
 #' sce <- get_def_assay(sce)
 
 get_def_assay <- function(input){
-  def_assay <- int_metadata(sce)$default_assay
+  def_assay <- int_metadata(input)$default_assay
   return(def_assay)
 }
 
