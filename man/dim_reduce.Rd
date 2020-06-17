@@ -7,7 +7,7 @@
 dim_reduce(
   input,
   genelist,
-  pre_reduce,
+  method,
   assay = NULL,
   nComp = 15,
   nVar = 0.85,
@@ -22,7 +22,7 @@ dim_reduce(
 
 \item{genelist}{the subset of genes to perform dimensionality reduction on}
 
-\item{pre_reduce}{the algorithm choice for reduction before tSNE (either "ICA", "PCA", "iPCA", or FALSE if you want to reuse).}
+\item{method}{the algorithm choice for reduction before tSNE (either "ICA", "PCA", "iPCA", or FALSE if you want to reuse).}
 
 \item{assay}{The assay to operate on. Will default to get_def_assay(input)}
 
@@ -45,6 +45,6 @@ This function will do dimensionality reduction.
 If the method is ICA, independent component analysis will be performed, and then tSNE will do the final dimension reduction. If PCA is selected, PCA will be performed before on the expression matrix transpose before tSNE. This PCA will use the cells positions on the principal components. If iPCA is selected, PCA will be be performed but without transposing the data. This will create "meta cells" instead of meta genes created in the typical PCA. Then tSNE will be performed on each cells contribution (loading) to the meta cell. We find that iPCA is much more robust and leads to cleaner clusters than traditional PCA.
 }
 \examples{
-ex_sc_example <- dim_reduce(input = ex_sc_example, genelist = gene_subset, pre_reduce = "iPCA", nComp = 15, tSNE_perp = 30, iterations = 500, print_progress=TRUE)
+ex_sc_example <- dim_reduce(input = ex_sc_example, genelist = gene_subset, method = "iPCA", nComp = 15, tSNE_perp = 30, iterations = 500, print_progress=TRUE)
 
 }

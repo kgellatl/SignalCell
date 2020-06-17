@@ -4,7 +4,7 @@
 #'
 #' @param input the input sce
 #' @param genelist the subset of genes to perform dimensionality reduction on
-#' @param pre_reduce the algorithm choice for reduction before tSNE (either "ICA", "PCA", "iPCA", or FALSE if you want to reuse).
+#' @param method the algorithm choice for reduction before tSNE (either "ICA", "PCA", "iPCA", or FALSE if you want to reuse).
 #' @param assay The assay to operate on. Will default to get_def_assay(input)
 #' @param nComp the number of components to reduce too before tSNE, 5-20 recommended.
 #' @param nVar cutoff for percent of variance explained from PCs
@@ -19,11 +19,11 @@
 #' @details
 #' If the method is ICA, independent component analysis will be performed, and then tSNE will do the final dimension reduction. If PCA is selected, PCA will be performed before on the expression matrix transpose before tSNE. This PCA will use the cells positions on the principal components. If iPCA is selected, PCA will be be performed but without transposing the data. This will create "meta cells" instead of meta genes created in the typical PCA. Then tSNE will be performed on each cells contribution (loading) to the meta cell. We find that iPCA is much more robust and leads to cleaner clusters than traditional PCA.
 #' @examples
-#' ex_sc_example <- dim_reduce(input = ex_sc_example, genelist = gene_subset, pre_reduce = "iPCA", nComp = 15, tSNE_perp = 30, iterations = 500, print_progress=TRUE)
+#' ex_sc_example <- dim_reduce(input = ex_sc_example, genelist = gene_subset, method = "iPCA", nComp = 15, tSNE_perp = 30, iterations = 500, print_progress=TRUE)
 #'
 dim_reduce <- function(input,
                        genelist,
-                       pre_reduce,
+                       method,
                        assay = NULL,
                        nComp = 15,
                        nVar=.85,
@@ -44,12 +44,12 @@ dim_reduce <- function(input,
     assay_name <- assay
   }
 
-  if(!(pre_reduce%in%c("ICA", "PCA", "iPCA", "vPCA", FALSE))){
+  if(!(method%in%c("ICA", "PCA", "iPCA", "vPCA", FALSE))){
     stop("Pre-reduce muse be one of ICA, PCA, iPCA, vPCA, or FALSE")
   }
 
-  args_list <- list(assay_name, genelist, pre_reduce, nComp, nVar, log, scale)
-  names(args_list) <- c("assay_name", "genelist", "pre_reduce", "nComp", "nVar", "log", "scale")
+  args_list <- list(assay_name, genelist, method, nComp, nVar, log, scale)
+  names(args_list) <- c("assay_name", "genelist", "method", "nComp", "nVar", "log", "scale")
   args_list <- list(args_list)
   names(args_list) <- "parameters"
   metadata_lem <- list(args_list, list())
@@ -62,7 +62,7 @@ dim_reduce <- function(input,
     input_mat <- scale(input_mat)
   }
 
-  if(pre_reduce == "ICA"){
+  if(method == "ICA"){
     ica <- fastICA::fastICA(t(input_mat), n.comp=(nComp), alg.typ = 'parallel', fun='logcosh', alpha = 1.0, method = 'C', verbose = print_progress)
     colnames(ica$A) <- gene_subset
     rownames(ica$S) <- colnames(input)
@@ -73,7 +73,7 @@ dim_reduce <- function(input,
     factorData_lem <- DataFrame(ica$W)
   }
 
-  if(pre_reduce == "PCA"){
+  if(method == "PCA"){
     PCA <- irlba::prcomp_irlba(t(input_mat), nComp)
     rownames(PCA$x) <- colnames(input)
     colnames(PCA$x) <- paste0("PC_Comp", seq(1:ncol(PCA$x)))
@@ -83,7 +83,7 @@ dim_reduce <- function(input,
     factorData_lem <- DataFrame(PCA$sdev)
   }
 
-  if(pre_reduce == "iPCA"){
+  if(method == "iPCA"){
     iPCA <- irlba::prcomp_irlba(input_mat, nComp)
     rownames(iPCA$rotation) <- colnames(input)
     colnames(iPCA$rotation) <- paste0("iPC_Comp", seq(1:ncol(iPCA$rotation)))
@@ -93,7 +93,7 @@ dim_reduce <- function(input,
     factorData_lem <- DataFrame(iPCA$sdev)
   }
 
-  if(pre_reduce == "vPCA"){
+  if(method == "vPCA"){
     vPCA <- irlba::prcomp_irlba(input_mat, n = nComp)
     # sum components until variance is >= x%
     var = vPCA$sdev^2/sum(vPCA$sdev^2)
@@ -116,6 +116,17 @@ dim_reduce <- function(input,
     featureLoadings_lem <- vPCA$x[,1:maxPC]
     factorData_lem <- DataFrame(vPCA$sdev[1:maxPC])
   }
+
+  if(is.null(reducedDim_key)){
+    reducedDim_key <- method
+  }
+
+  rownames(featureLoadings_lem) <- genelist
+  lem <- LinearEmbeddingMatrix(sampleFactors_lem,
+                               featureLoadings_lem,
+                               factorData_lem,
+                               metadata_lem)
+  reducedDim(input, type = reducedDim_key) <- lem
 
   return(input)
 }
