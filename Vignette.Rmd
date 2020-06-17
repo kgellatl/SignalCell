@@ -12,6 +12,7 @@ output:
 
 ```{r setup, include=FALSE, warning=FALSE, error=FALSE}
 knitr::opts_chunk$set(echo = TRUE, comment = "")
+# https://github.com/kgellatl/SignalCell
 library(SignalCell)
 ```
 
@@ -22,7 +23,8 @@ library(SignalCell)
 # sparse_dat <- as(tst_dat, "dgCMatrix")
 
 load("~/Dropbox (UMass Medical School)/Lab_inDrop/mDC_vignette_data/mDC_dat.Rdata")
-sparse_dat <- as(mDC_dat, "dgCMatrix")
+sparse_dat <- as(mDC_dat, "dgRMatrix")
+rm(mDC_dat)
 
 ```
 
@@ -33,6 +35,8 @@ sparse_dat <- as(mDC_dat, "dgCMatrix")
 ```{r}
 ### http://bioconductor.org/packages/release/bioc/html/SingleCellExperiment.html
 sce <- construct_sce(sparse_dat)
+rm(sparse_dat)
+
 class(sce)
 class(assay(sce, "counts"))
 sce
@@ -46,7 +50,7 @@ sce
 counts <- assay(sce, "counts")
 libsizes <- colSums(counts)
 size.factors <- libsizes/mean(libsizes)
-logcounts(sce) <- as(log2(t(t(counts)/size.factors) + 1), "dgCMatrix")
+logcounts(sce) <- log2(t(t(counts)/size.factors) + 1)
 assayNames(sce)
 
 get_def_assay(sce)
@@ -59,9 +63,9 @@ get_def_assay(sce)
 
 ```{r}
 
-sce$Timepoint <- "0hr"
-sce$Timepoint[grep("1", colnames(sce))] <- "1hr"
-sce$Timepoint[grep("4", colnames(sce))] <- "4hr"
+colData(sce)$Timpoint <- "0hr"
+sce$Timpoint[grep("1", colnames(sce))] <- "1hr"
+sce$Timpoint[grep("4", colnames(sce))] <- "4hr"
 
 sce <- calc_libsize(sce, assay = "counts", label = "UMI_sum")
 colData(sce)
@@ -86,8 +90,8 @@ sce
 
 ```{r}
 
-sce <- calc_var_genes(sce, method = "CV")
 sce <- calc_var_genes(sce, method = "Malhanobis")
+sce <- calc_var_genes(sce, method = "CV", threshold = 1, minCells = 10)
 sce <- calc_var_genes(sce, method = "Gini")
 
 rowData(sce)
@@ -97,26 +101,124 @@ gene_subset <- get_var_genes(sce, method = "Malhanobis", cutoff = 0.85)
 
 ```
 
-## Dimension reduction
+## Bare Minimum Example
 
 ```{r}
-
-sce <- dim_reduce(sce, genelist = gene_subset, pre_reduce = "iPCA", save_lem = T)  # save_lem!!!
-
+gene_subset <- get_var_genes(sce, method = "Malhanobis", cutoff = 0.85)
+sce <- dim_reduce(input = sce, genelist = gene_subset, pre_reduce = "iPCA")
+sce <- embed_cells(input = sce, lem = "iPCA", method = "tSNE")
+sce <- cluster_cells(sce, dims = "Comp", lem = "iPCA",  method = "spectral", num_clust = 6)
 colData(sce)
-int_colData(sce)
+```
 
-lem <- reducedDim(sce, "iPCA")
-head(lem@sampleFactors)
-head(lem@featureLoadings)
-head(lem@factorData)
-lem@metadata[1:9]
 
-sce <- dim_reduce(sce, genelist = gene_subset, pre_reduce = "vPCA", reducedDim_key = "vPCA_Attempt2")
+### Dimension reduction Detailed
+
+```{r}
+###### Example 1 : Linear Embedding Matrix (LEM) Class, Single Embedding #####
+
+# First we run dimension reduction
+# When NULL, the name of the lem defaults to the pre_reduce method, in this case iPCA
+sce <- dim_reduce(input = sce, genelist = gene_subset, pre_reduce = "iPCA", reducedDim_key = NULL)
+
+# We can see what LEM results exist with reducedDimNames
 reducedDimNames(sce)
 
-sce <- dim_reduce(sce, pre_reduce = F, tSNE_perp = 50, lem = "vPCA_Attempt2")
+# We can access the LEM with reducedDim and providing a LEM name
+LEM_iPCA <- reducedDim(sce, "iPCA")
 
+# Structure of the LEM
+# SVD (like) Matrices
+head(sampleFactors(LEM_iPCA)) # cells = rows
+head(featureLoadings(LEM_iPCA))  # gene = rows
+head(factorData(LEM_iPCA)) # diagonal
+
+# There is also a metadata field. This stores the parameters of the LEM.
+# As of now, the embedding field is empty
+metadata_iPCA <- metadata(LEM_iPCA)
+str(metadata_iPCA)
+
+# Next we embed the cells. Right now tSNE is supported, the default method. We can add UMAP support
+# This embedding is stored internally to the input LEM, so a lem must be provided as an argument
+# As above, when no embedding_key is provided, the name of the embedding defaults to the method, in this case tSNE
+# When TRUE, write_colData will write the x & y coordinates to colData()
+# When NULL the colData_labs default to x and y pasted with the method
+
+sce <- embed_cells(input = sce, lem = "iPCA", embedding_key = NULL, write_colData = T, method = "tSNE", seed = 10)
+colData(sce)
+
+# Now within the metadata of the LEM, we have an embedding stored, along with its parameters
+# To simplify usage, there is a function, embeddings(), to list available LEMs, and their embedding_key
+# There is another function, embedding(), to retrieve a specific embedding with its embedding_key
+# This requires a LEM argument, and the embedding_key
+
+embeddings(sce)
+head(embedding(sce, lem = "iPCA", embedding = "tSNE"))
+
+# Parameters for the embedding are nested within the LEM metadata, and then the embedding
+LEM_iPCA <- reducedDim(sce, "iPCA")
+metadata_iPCA <- metadata(LEM_iPCA)
+metadata_iPCA$embeddings$tSNE$parameters
+
+######  Example 2 : Second LEM, Customization, multiple embeddings ######
+
+# You can store as many LEM objects you want.
+# In this case we use reducedDim_key to name it specifically.
+# We run PCA for 20 components
+sce <- dim_reduce(input = sce, reducedDim_key = "PCA_20comp", genelist = gene_subset, pre_reduce = "PCA", nComp = 20)
+
+# Now we have 2 LEMs stored
+reducedDimNames(sce)
+
+# Now when we call embed_cells, we call the new reducedDim() object, "PCA_20comp"
+# However we only select 15 components
+# When embedding we can also specify the column names written to colData()
+# This way as many x + y embeddings can be stored as you desire within colData (as long as they are uniquely named)
+sce <- embed_cells(input = sce, lem = "PCA_20comp", embedding_key = "PCA_20_15", colData_labs = c("PCA_20_15_x", "PCA_20_15_y"), comp_select = 1:15, iterations = 500, tSNE_perp = 50)
+colData(sce)
+
+# On a single LEM object we can try as many embeddings as desired
+# To prevent them overwriting, we can provide a new embedding_key
+# With our second embedding, we tweak parameters
+sce <- embed_cells(input = sce, lem = "PCA_20comp", embedding_key = "PCA_embed2", colData_labs = c("PCA_embed2_x", "PCA_embed2_y"), comp_select = 1:10, tSNE_perp = 50)
+colData(sce)
+
+# Now our object has 2 sets of LEMS, and within the second LEM are 2 different embeddings
+embeddings(sce)
+```
+
+## Clustering
+
+```{r}
+reducedDims(sce)
+sce <- cluster_cells(sce, dims = "Comp", lem = "iPCA",  method = "spectral", num_clust = 6)
+
+# 2D clustering can  be done on colData()
+sce <- cluster_cells(sce, dims = "2d", method = "density", xy = c("tSNE_x", "tSNE_y"))
+colData(sce)
+
+# 2D clustering can also be done on an embedding not stored in colData, but requires more arguments because the embedding is stored with the LEM
+# We also provide a name arguement for this new colData() column to prevent overwriting the default "Cluster"
+# Notice the end result clustering on the colData() or lem are the same, because the underlying data is the same
+embeddings(sce)
+sce <- cluster_cells(sce, dims = "2d", method = "density", lem = "iPCA",  embedding = "tSNE", name = "PCA_20_embed2_cluster")
+colData(sce)[,c("Cluster", "PCA_20_embed2_cluster")]
+
+# If write_colData is FALSE when you run embed_cells(), than the colData will not get flooded with all embeddings you run
+# You can always write a single embedding result to colData, the one you prefer
+int_embedding <- embedding(input = sce, lem = "iPCA", embedding = "tSNE")
+colnames(int_embedding) <- c("int_embedding1", "int_embedding2")
+colData(sce) <- cbind(colData(sce), int_embedding)
+colData(sce)
+```
+
+# Basic Plots
+
+## Setting default coordinates
+
+```{r}
+###### NEEDS TO BE CHANGED
+#### EITHER EMBEDDING OR LEM!
 sce <- set_xy(sce, "iPCA", x = 1, y = 2)
 head(colData(sce))[,c("x", "y")]
 
@@ -125,33 +227,25 @@ head(colData(sce))[,c("x", "y")]
 
 ```
 
-## Clustering
-
-```{r}
-
-sce <- cluster_cells(sce, lem = "iPCA", dims = "Comp", method = "spectral", num_clust = 6)
-
-sce <- cluster_cells(sce, lem = "vPCA_Attempt2", dims = "2d", method = "density", name = "vPCA_Attempt2_Cluster", num_clust = 8)
-
-colData(sce)
-
-```
-
-# Basic Plots
-
 ## tSNE metadata Plot
 
 ```{r}
 
-plot_tsne_metadata(sce, color_by = "Cluster")
+###### NEEDS TO BE CHANGED
+#### EITHER EMBEDDING OR LEM!
 
-plot_tsne_metadata(sce, color_by = "Cluster", facet_by = "Timepoint",  coords = c("iPCA", 1, 2))
+plot_metadata(sce, color_by = "Cluster")
+
+plot_metadata(sce, color_by = "Cluster", facet_by = "Timepoint",  coords = c("iPCA", 1, 2))
 
 ```
 
 ## tSNE gene Plot
 
 ```{r}
+
+###### NEEDS TO BE CHANGED
+#### EITHER EMBEDDING OR LEM!
 
 plot_tsne_gene(sce, gene = "Ccr7")
 
@@ -175,6 +269,7 @@ plot_violin(sce, gene = c("Tnf"), facet_by = "Timepoint", color_by = "Cluster")
 
 ```
 
+
 # Bulk Analysis
 
 ```{r}
@@ -183,4 +278,13 @@ sce@elementMetadata # use for bulk values??
 
 ```
 
+# To Do
+
+# Change the dim reduce
+
+### Quantitative clustering
+
+### Test file Sizes on LARGE Data! 
+
+### dgC vs dgR matrix performance test
 
