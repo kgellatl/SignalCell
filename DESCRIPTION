@@ -17,7 +17,8 @@ Imports:
     edgeR,
     kknn,
     Rtsne,
-    densityClust
+    densityClust,
+    fpc
 biocViews: Single Cell, Networking
 VignetteBuilder: knitr
 RoxygenNote: 7.1.0
