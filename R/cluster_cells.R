@@ -133,13 +133,17 @@ cluster_cells <- function(input,
 
   if(cluster_stats){
     cstat <- fpc::cluster.stats(dist(tocluster), sc_clusters)
-    cstat <- tibble(cstat$avg.silwidth,
+    cstat <- tibble(cstat$average.between,
+                    cstat$average.within,
+                    cstat$within.cluster.ss,
+                    cstat$avg.silwidth,
+                    cstat$pearsongamma,
                     cstat$dunn,
                     cstat$dunn2,
                     cstat$entropy,
-                    cstat$ch,
-                    cstat$sindex)
-    colnames(cstat)
+                    cstat$wb.ratio,
+                    cstat$ch)
+
     colnames(cstat) <- gsub("cstat", "", colnames(cstat))
     colnames(cstat) <- gsub("[[:punct:]]", "", colnames(cstat))
 
@@ -158,11 +162,7 @@ cluster_cells <- function(input,
     colnames(dat) <- dat[1,]
     dat <- data.frame(dat)
     dat <-dat[2,,drop = F]
-
     cstat <- tibble(cbind(data.frame(cstat), dat))
-    cstat[,12] <- as.numeric(cstat[,12])
-    cstat[,14] <- as.numeric(cstat[,14])
-
     if(is.null(int_metadata(input)$cluster_metrics)){
       int_metadata(input)$cluster_metrics <- cstat
     } else {
