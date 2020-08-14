@@ -24,6 +24,8 @@ library(SignalCell)
 
 load("~/Dropbox (UMass Medical School)/Lab_inDrop/mDC_vignette_data/mDC_dat.Rdata")
 sparse_dat <- as(mDC_dat, "dgRMatrix")
+object.size(mDC_dat)
+object.size(sparse_dat)
 rm(mDC_dat)
 
 ```
@@ -91,23 +93,20 @@ sce
 ```{r}
 
 sce <- calc_var_genes(sce, method = "Malhanobis")
-sce <- calc_var_genes(sce, method = "CV", threshold = 1, minCells = 10)
+sce <- calc_var_genes(sce, method = "CV")
 sce <- calc_var_genes(sce, method = "Gini")
 
 rowData(sce)
 sce
-
-gene_subset <- get_var_genes(sce, method = "Malhanobis", cutoff = 0.85)
-
 ```
 
 ## Bare Minimum Example
 
 ```{r}
 gene_subset <- get_var_genes(sce, method = "Malhanobis", cutoff = 0.85)
-sce <- dim_reduce(input = sce, genelist = gene_subset, pre_reduce = "iPCA")
+gene_subset[100:110]
+sce <- dim_reduce(input = sce, genelist = gene_subset, method = "iPCA")
 sce <- embed_cells(input = sce, lem = "iPCA", method = "tSNE")
-sce <- cluster_cells(sce, dims = "Comp", lem = "iPCA",  method = "spectral", num_clust = 6)
 colData(sce)
 ```
 
@@ -118,8 +117,8 @@ colData(sce)
 ###### Example 1 : Linear Embedding Matrix (LEM) Class, Single Embedding #####
 
 # First we run dimension reduction
-# When NULL, the name of the lem defaults to the pre_reduce method, in this case iPCA
-sce <- dim_reduce(input = sce, genelist = gene_subset, pre_reduce = "iPCA", reducedDim_key = NULL)
+# When NULL, the name of the lem defaults to the method, in this case iPCA
+sce <- dim_reduce(input = sce, genelist = gene_subset, method = "iPCA", reducedDim_key = NULL)
 
 # We can see what LEM results exist with reducedDimNames
 reducedDimNames(sce)
@@ -165,7 +164,7 @@ metadata_iPCA$embeddings$tSNE$parameters
 # You can store as many LEM objects you want.
 # In this case we use reducedDim_key to name it specifically.
 # We run PCA for 20 components
-sce <- dim_reduce(input = sce, reducedDim_key = "PCA_20comp", genelist = gene_subset, pre_reduce = "PCA", nComp = 20)
+sce <- dim_reduce(input = sce, reducedDim_key = "PCA_20comp", genelist = gene_subset, method = "PCA", nComp = 20)
 
 # Now we have 2 LEMs stored
 reducedDimNames(sce)
@@ -191,7 +190,7 @@ embeddings(sce)
 
 ```{r}
 reducedDims(sce)
-sce <- cluster_cells(sce, dims = "Comp", lem = "iPCA",  method = "spectral", num_clust = 6)
+sce <- cluster_cells(sce, dims = "Comp", lem = "iPCA",  method = "spectral", k = 6)
 
 # 2D clustering can  be done on colData()
 sce <- cluster_cells(sce, dims = "2d", method = "density", xy = c("tSNE_x", "tSNE_y"))
@@ -219,11 +218,11 @@ colData(sce)
 ```{r}
 ###### NEEDS TO BE CHANGED
 #### EITHER EMBEDDING OR LEM!
-sce <- set_xy(sce, "iPCA", x = 1, y = 2)
-head(colData(sce))[,c("x", "y")]
-
-sce <- set_xy(sce, "iPCA")
-head(colData(sce))[,c("x", "y")]
+# sce <- set_xy(sce, "iPCA", x = 1, y = 2)
+# head(colData(sce))[,c("x", "y")]
+# 
+# sce <- set_xy(sce, "iPCA")
+# head(colData(sce))[,c("x", "y")]
 
 ```
 
@@ -234,9 +233,9 @@ head(colData(sce))[,c("x", "y")]
 ###### NEEDS TO BE CHANGED
 #### EITHER EMBEDDING OR LEM!
 
-plot_metadata(sce, color_by = "Cluster")
-
-plot_metadata(sce, color_by = "Cluster", facet_by = "Timepoint",  coords = c("iPCA", 1, 2))
+# plot_metadata(sce, color_by = "Cluster")
+# 
+# plot_metadata(sce, color_by = "Cluster", facet_by = "Timepoint",  coords = c("iPCA", 1, 2))
 
 ```
 
@@ -247,11 +246,11 @@ plot_metadata(sce, color_by = "Cluster", facet_by = "Timepoint",  coords = c("iP
 ###### NEEDS TO BE CHANGED
 #### EITHER EMBEDDING OR LEM!
 
-plot_tsne_gene(sce, gene = "Ccr7")
-
-plot_tsne_gene(sce, gene = c("Ccr7", "Lcn2")) 
-
-plot_tsne_gene(sce, gene = c("Tnf"), facet_by = "Timepoint")
+# plot_tsne_gene(sce, gene = "Ccr7")
+# 
+# plot_tsne_gene(sce, gene = c("Ccr7", "Lcn2")) 
+# 
+# plot_tsne_gene(sce, gene = c("Tnf"), facet_by = "Timepoint")
 
 ```
 
@@ -259,13 +258,13 @@ plot_tsne_gene(sce, gene = c("Tnf"), facet_by = "Timepoint")
 
 ```{r}
 
-plot_violin(sce, gene = "Ccr7", color_by = "Cluster")
-
-plot_violin(sce, gene = "Ccr7", color_by = "Cluster", assay = "counts")
-
-plot_violin(sce, gene = c("Ccr7", "Lcn2"), color_by = "Cluster") # NEW
-
-plot_violin(sce, gene = c("Tnf"), facet_by = "Timepoint", color_by = "Cluster")
+# plot_violin(sce, gene = "Ccr7", color_by = "Cluster")
+# 
+# plot_violin(sce, gene = "Ccr7", color_by = "Cluster", assay = "counts")
+# 
+# plot_violin(sce, gene = c("Ccr7", "Lcn2"), color_by = "Cluster") # NEW
+# 
+# plot_violin(sce, gene = c("Tnf"), facet_by = "Timepoint", color_by = "Cluster")
 
 ```
 
@@ -274,7 +273,7 @@ plot_violin(sce, gene = c("Tnf"), facet_by = "Timepoint", color_by = "Cluster")
 
 ```{r}
 
-sce@elementMetadata # use for bulk values??
+# sce@elementMetadata # use for bulk values??
 
 ```
 
