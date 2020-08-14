@@ -38,7 +38,7 @@ plot_metadata <- function(input,
                                ylab = "y"){
 
   if(!(color_by %in% names(colData(input)))){
-    stop(paste0("color_by not found, please use one of ", paste0(names(colData(sce)), collapse = ", ")))
+    stop(paste0("color_by not found, please use one of ", paste0(names(colData(input)), collapse = ", ")))
   }
 
   if(!is.null(coords)){

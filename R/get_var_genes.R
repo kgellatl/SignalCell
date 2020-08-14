@@ -19,14 +19,14 @@ get_var_genes <- function(input,
     stop("Method must be one of CV, Malhanobis, or Gini")
   }
 
-  if(!(method%in%colnames(rowData(sce)))){
+  if(!(method%in%colnames(rowData(input)))){
     stop("Please use calc_var_genes to calculate genewise statistics before this function.")
   }
 
-  vals <- rowData(sce)[,method]
+  vals <- rowData(input)[,method]
   cut_val <- quantile(vals, cutoff, na.rm = T)
   ind <- which(vals >= cut_val)
-  gene_subset <- rownames(sce)[ind]
+  gene_subset <- rownames(input)[ind]
 
   return(gene_subset)
 }
