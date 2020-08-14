@@ -133,15 +133,9 @@ cluster_cells <- function(input,
 
   if(cluster_stats){
     cstat <- fpc::cluster.stats(dist(tocluster), sc_clusters)
-    cstat <- tibble(cstat$average.between,
-                    cstat$average.within,
-                    cstat$within.cluster.ss,
-                    cstat$avg.silwidth,
+    cstat <- tibble(cstat$avg.silwidth,
                     cstat$pearsongamma,
-                    cstat$dunn,
                     cstat$dunn2,
-                    cstat$entropy,
-                    cstat$wb.ratio,
                     cstat$ch)
 
     colnames(cstat) <- gsub("cstat", "", colnames(cstat))
