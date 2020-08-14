@@ -7,7 +7,7 @@
 #' @param dims either "2d" or "Comp"
 #' @param method can either be "spectral" or "density" which is on 2d
 #' @param embedding if method is 2D, an embedding must be provided
-#' @param num_clust the number of clusters. Required for spectral but optional for density.
+#' @param k the number of clusters. Required for spectral but optional for density.
 #' @param name name of the colData cluster column
 #' @param s the number of standard deviations from the curve to select cluster centers
 #' @export
@@ -16,7 +16,7 @@
 #' or the 2d tsne result if method = density. Typically spectral clustering works much better on higher dimensional data,
 #' which density based clustering works better on 2d data.
 #' @examples
-#' ex_sc_example <- cluster_sc(input = ex_sc_example, dimension = "Comp", method = "spectral", num_clust = 6)
+#' ex_sc_example <- cluster_sc(input = ex_sc_example, dimension = "Comp", method = "spectral", k = 6)
 
 cluster_cells <- function(input,
                           lem,
@@ -24,9 +24,10 @@ cluster_cells <- function(input,
                           method,
                           embedding = NULL,
                           xy = NULL,
-                          num_clust = NULL,
+                          k = NULL,
                           name = "Cluster",
-                          s=2) {
+                          s=2,
+                          cluster_stats = F) {
 
   if(!(dims %in% c("2d", "Comp"))){
     stop("dims must be either '2d' or 'Comp'")
@@ -36,8 +37,12 @@ cluster_cells <- function(input,
     stop("method must be either 'spectral' or 'density'")
   }
 
+  ###
+  ### Prepare cluster input
+  ###
+
   if(dims == "Comp") {
-    if(!(lem %in% reducedDimNames(sce))){
+    if(!(lem %in% reducedDimNames(input))){
       stop(paste0("LEM not found, LEMs available are ", paste0(reducedDimNames(input), collapse = ", ")))
     }
     dim_dat <- reducedDim(input, lem)
@@ -59,12 +64,16 @@ cluster_cells <- function(input,
     }
   }
 
+  ###
+  ###
+  ###
+
 
   if(method == "spectral"){
-    if(is.null(num_clust)){
-      stop("Please provide num_clust argument")
+    if(is.null(k)){
+      stop("Please provide k argument")
     }
-    spec <- kknn::specClust(tocluster, centers = num_clust, method = 'random-walk')
+    spec <- kknn::specClust(tocluster, centers = k, method = 'random-walk')
     sc_clusters <- spec$cluster
   }
 
@@ -75,7 +84,7 @@ cluster_cells <- function(input,
     colnames(comb) = "gamma"
     comb = comb[order(comb$gamma, decreasing = T), ,drop=F]
     comb$index = seq(nrow(comb))
-    if (is.null(num_clust)) {
+    if (is.null(k)) {
       # chose the max k from gamma distribution
       fit = mgcv::gam(formula = gamma ~ s(index, bs="cs"), data = log10(comb[floor(0.01*nrow(comb)):nrow(comb),]+1))
       test = log10(comb[,"index", drop=F])
@@ -92,7 +101,7 @@ cluster_cells <- function(input,
               geom_line(data=comb, aes(index, predsd), colour="blue"))
       cellcut = rownames(comb[comb$gamma>comb$predsd,])
     } else {
-      cellcut = rownames(comb)[1:num_clust]
+      cellcut = rownames(comb)[1:k]
     }
     cellidx = which(names(clust_tSNE$rho)%in%cellcut)
     sc_clusters = densityClust::findClusters(clust_tSNE, peaks = cellidx)
@@ -100,5 +109,70 @@ cluster_cells <- function(input,
   }
   colData(input)[name] <- paste0("Cluster_", sc_clusters)
 
+  # This section is for prediction.strength() from fpc
+  # It outputs the correct CBI format, however issues trying to get them to work together...
+  # if(CBI){
+  #   cbi_res <- vector(mode = "list", length = 5)
+  #   names(cbi_res) <- c("result", "nc", "clusterlist", "partition", "clustermethod")
+  #   cbi_res$clustermethod <- method
+  #   cbi_res$result <- tocluster
+  #   cbi_res$nc <- k
+  #   cbi_res$partition <- sc_clusters
+  #   clusterlist <- vector(mode = "list", length = k)
+  #   clusters_cbi <- sort(unique(sc_clusters))
+  #   for (i in 1:length(clusters_cbi)) {
+  #     int_cluster <- clusters_cbi[i]
+  #     log_vec <- sc_clusters == int_cluster
+  #     names(log_vec) <- rownames(tocluster)
+  #     clusterlist[[i]] <- log_vec
+  #   }
+  #   cbi_res$clusterlist <- clusterlist
+  #   return(cbi_res)
+  #
+  # }
+
+  if(cluster_stats){
+    cstat <- fpc::cluster.stats(dist(tocluster), sc_clusters)
+    cstat <- tibble(cstat$avg.silwidth,
+                    cstat$dunn,
+                    cstat$dunn2,
+                    cstat$entropy,
+                    cstat$ch,
+                    cstat$sindex)
+    colnames(cstat)
+    colnames(cstat) <- gsub("cstat", "", colnames(cstat))
+    colnames(cstat) <- gsub("[[:punct:]]", "", colnames(cstat))
+
+    # Terrible pesky argument grabbing. I do not know why this cannot be simpler...
+    # tmp is a weird format, simple conversions do not work
+    tmp <- mget(names(formals()),sys.frame(sys.nframe()))
+    dat <- c()
+    for (i in 1:length(tmp)) {
+      args <- names(tmp)[i]
+      val <- as.vector(unlist(tmp[args]))
+      if(is.null(val)){val <- NA}
+      dat <- c(dat, args, val)
+    }
+    dat <- (unlist(dat[3:length(dat)]))
+    dat <- matrix(dat, ncol = length(dat)/2)
+    colnames(dat) <- dat[1,]
+    dat <- data.frame(dat)
+    dat <-dat[2,,drop = F]
+
+    cstat <- tibble(cbind(data.frame(cstat), dat))
+    cstat[,12] <- as.numeric(cstat[,12])
+    cstat[,14] <- as.numeric(cstat[,14])
+
+    if(is.null(int_metadata(input)$cluster_metrics)){
+      int_metadata(input)$cluster_metrics <- cstat
+    } else {
+      int_metadata(input)$cluster_metrics <- rbind(int_metadata(input)$cluster_metrics,cstat)
+
+    }
+
+  }
   return(input)
 }
+
+
+
