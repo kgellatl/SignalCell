@@ -21,7 +21,6 @@ library(SignalCell)
 ```{r}
 # load("~/Dropbox (UMass Medical School)/UMASS/GitHub/R/SignalCell/data/tst_dat.Rdata")
 # sparse_dat <- as(tst_dat, "dgCMatrix")
-
 load("~/Dropbox (UMass Medical School)/Lab_inDrop/mDC_vignette_data/mDC_dat.Rdata")
 sparse_dat <- as(mDC_dat, "dgRMatrix")
 object.size(mDC_dat)
@@ -184,24 +183,6 @@ colData(sce)
 
 # Now our object has 2 sets of LEMS, and within the second LEM are 2 different embeddings
 embeddings(sce)
-```
-
-## Clustering
-
-```{r}
-reducedDims(sce)
-sce <- cluster_cells(sce, dims = "Comp", lem = "iPCA",  method = "spectral", k = 6)
-
-# 2D clustering can  be done on colData()
-sce <- cluster_cells(sce, dims = "2d", method = "density", xy = c("tSNE_x", "tSNE_y"))
-colData(sce)
-
-# 2D clustering can also be done on an embedding not stored in colData, but requires more arguments because the embedding is stored with the LEM
-# We also provide a name arguement for this new colData() column to prevent overwriting the default "Cluster"
-# Notice the end result clustering on the colData() or lem are the same, because the underlying data is the same
-embeddings(sce)
-sce <- cluster_cells(sce, dims = "2d", method = "density", lem = "iPCA",  embedding = "tSNE", name = "PCA_20_embed2_cluster")
-colData(sce)[,c("Cluster", "PCA_20_embed2_cluster")]
 
 # If write_colData is FALSE when you run embed_cells(), than the colData will not get flooded with all embeddings you run
 # You can always write a single embedding result to colData, the one you prefer
@@ -209,6 +190,70 @@ int_embedding <- embedding(input = sce, lem = "iPCA", embedding = "tSNE")
 colnames(int_embedding) <- c("int_embedding1", "int_embedding2")
 colData(sce) <- cbind(colData(sce), int_embedding)
 colData(sce)
+
+
+tsne_xy <- embedding(sce, lem = "iPCA", embedding = "tSNE")
+colnames(tsne_xy) <- c("x", "y")
+colData(sce) <- cbind(colData(sce), tsne_xy)
+```
+
+## Clustering
+
+```{r}
+reducedDims(sce)
+sce <- cluster_cells(sce, dims = "Comp", lem = "iPCA",  method = "spectral", k = 4)
+plot_metadata(sce, color_by = "Cluster")
+
+
+# 2D clustering can  be done on colData()
+sce <- cluster_cells(sce, dims = "2d", method = "density", xy = c("tSNE_x", "tSNE_y"))
+colData(sce)
+
+# 2D clustering can also be done on an embedding not stored in colData, but requires more arguments because the embedding is stored with the LEM
+# We also provide a name argument for this new colData() column to prevent overwriting the default "Cluster"
+# Notice the end result clustering on the colData() or lem are the same, because the underlying data is the same
+embeddings(sce)
+sce <- cluster_cells(sce, dims = "2d", method = "density", lem = "iPCA",  embedding = "tSNE", name = "PCA_20_embed2_cluster")
+
+colData(sce)[,c("Cluster", "PCA_20_embed2_cluster")]
+
+# A New argument allows calculation of clustering statistics (cluster_stats()). These are stored in the internal metadata of the sce
+
+ks <- 3:13
+reps <- 1:7
+
+for(i in 1:length(ks)) {
+  for (j in reps) {
+    print(i)
+    print(j)
+    sce <- cluster_cells(sce, dims = "Comp", lem = "iPCA",  method = "spectral", k = ks[i], cluster_stats = T)
+  }
+}
+
+c_metrics <- int_metadata(sce)$cluster_metrics
+c_metrics <- pivot_longer(c_metrics, cols = 1:6, values_to = "value", names_to = "metric")
+c_metrics$metric <- as.factor(c_metrics$metric)
+c_metrics$k <- as.factor(c_metrics$k)
+
+g <- ggplot(c_metrics)
+g <- g + geom_violin(aes(x = k, y = value), scale = "width")
+g <- g + geom_jitter(aes(x = k, y = value))
+g <- g + facet_wrap(~metric, scales = "free")
+plot(g)
+
+# average.between = average distance between clusters.
+# average.within = average distance within clusters.
+# within.cluster.ss = a generalisation of the within clusters sum of squares
+# avg.silwidth = average silhouette width. 
+#pearsongamma = correlation between distances and a 0-1-vector where 0 means same cluster, 1means different clusters
+# dunn = minimum separation / maximum diameter.
+# dunn2 = minimum average dissimilarity between two cluster / maximum average withincluster dissimilarity
+# entropy = entropy of the distribution of cluster memberships
+# wb.ratio = average.within/average.between
+# ch = Calinski and Harabasz inde
+
+# https://medium.com/@haataa/how-to-measure-clustering-performances-when-there-are-no-ground-truth-db027e9a871c
+# https://cran.r-project.org/web/packages/fpc/fpc.pdf
 ```
 
 # Basic Plots
@@ -218,8 +263,7 @@ colData(sce)
 ```{r}
 ###### NEEDS TO BE CHANGED
 #### EITHER EMBEDDING OR LEM!
-# sce <- set_xy(sce, "iPCA", x = 1, y = 2)
-# head(colData(sce))[,c("x", "y")]
+# sce <- set_xy(sce, "iPCA")
 # 
 # sce <- set_xy(sce, "iPCA")
 # head(colData(sce))[,c("x", "y")]
@@ -233,7 +277,7 @@ colData(sce)
 ###### NEEDS TO BE CHANGED
 #### EITHER EMBEDDING OR LEM!
 
-# plot_metadata(sce, color_by = "Cluster")
+plot_metadata(sce, color_by = "Cluster")
 # 
 # plot_metadata(sce, color_by = "Cluster", facet_by = "Timepoint",  coords = c("iPCA", 1, 2))
 
