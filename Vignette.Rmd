@@ -187,23 +187,17 @@ embeddings(sce)
 # If write_colData is FALSE when you run embed_cells(), than the colData will not get flooded with all embeddings you run
 # You can always write a single embedding result to colData, the one you prefer
 int_embedding <- embedding(input = sce, lem = "iPCA", embedding = "tSNE")
-colnames(int_embedding) <- c("int_embedding1", "int_embedding2")
+colnames(int_embedding) <- c("x", "y")
 colData(sce) <- cbind(colData(sce), int_embedding)
 colData(sce)
-
-
-tsne_xy <- embedding(sce, lem = "iPCA", embedding = "tSNE")
-colnames(tsne_xy) <- c("x", "y")
-colData(sce) <- cbind(colData(sce), tsne_xy)
 ```
 
 ## Clustering
 
 ```{r}
 reducedDims(sce)
-sce <- cluster_cells(sce, dims = "Comp", lem = "iPCA",  method = "spectral", k = 4)
+sce <- cluster_cells(sce, dims = "Comp", lem = "iPCA",  method = "spectral", k = 6)
 plot_metadata(sce, color_by = "Cluster")
-
 
 # 2D clustering can  be done on colData()
 sce <- cluster_cells(sce, dims = "2d", method = "density", xy = c("tSNE_x", "tSNE_y"))
@@ -224,16 +218,14 @@ reps <- 1:7
 
 for(i in 1:length(ks)) {
   for (j in reps) {
-    print(i)
-    print(j)
     sce <- cluster_cells(sce, dims = "Comp", lem = "iPCA",  method = "spectral", k = ks[i], cluster_stats = T)
   }
 }
 
 c_metrics <- int_metadata(sce)$cluster_metrics
-c_metrics <- pivot_longer(c_metrics, cols = 1:6, values_to = "value", names_to = "metric")
+c_metrics <- pivot_longer(c_metrics, cols = 1:4, values_to = "value", names_to = "metric")
 c_metrics$metric <- as.factor(c_metrics$metric)
-c_metrics$k <- as.factor(c_metrics$k)
+c_metrics$k <- as.factor(as.numeric(c_metrics$k))
 
 g <- ggplot(c_metrics)
 g <- g + geom_violin(aes(x = k, y = value), scale = "width")
