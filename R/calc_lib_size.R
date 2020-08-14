@@ -15,9 +15,7 @@ calc_libsize <- function(input,
                          assay = "counts",
                          label = NULL){
 
-  if(!(assay %in% assayNames(input))){
-    stop(paste0("Assay not found, cannot set to default, assays available are, ", names(input@assays)))
-  }
+  .check_assay(input, assay)
 
   libsizes <- apply(assay(input, assay),2,sum)
 

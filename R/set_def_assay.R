@@ -13,9 +13,7 @@
 set_def_assay <- function(input,
                           def_assay){
 
-  if(!(def_assay %in% assayNames(input))){
-    stop(paste0("Assay not found, cannot set to default, assays available are, ", names(input@assays)))
-  }
+  .check_assay(input, def_assay)
   int_metadata(input)$default_assay <- def_assay
   return(input)
 }

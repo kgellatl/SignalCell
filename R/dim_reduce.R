@@ -19,7 +19,7 @@
 #' @details
 #' If the method is ICA, independent component analysis will be performed, and then tSNE will do the final dimension reduction. If PCA is selected, PCA will be performed before on the expression matrix transpose before tSNE. This PCA will use the cells positions on the principal components. If iPCA is selected, PCA will be be performed but without transposing the data. This will create "meta cells" instead of meta genes created in the typical PCA. Then tSNE will be performed on each cells contribution (loading) to the meta cell. We find that iPCA is much more robust and leads to cleaner clusters than traditional PCA.
 #' @examples
-#' ex_sc_example <- dim_reduce(input = ex_sc_example, genelist = gene_subset, method = "iPCA", nComp = 15, tSNE_perp = 30, iterations = 500, print_progress=TRUE)
+#' ex_sc_example <- dim_reduce(input = ex_sc_example, genelist = genelist, method = "iPCA", nComp = 15, tSNE_perp = 30, iterations = 500, print_progress=TRUE)
 #'
 dim_reduce <- function(input,
                        genelist,
@@ -34,13 +34,11 @@ dim_reduce <- function(input,
 
   if(is.null(assay)){
     def_assay <- get_def_assay(input)
-    input_mat <- assay(input, def_assay)[gene_subset,]
+    input_mat <- assay(input, def_assay)[genelist,]
     assay_name <- def_assay
   } else {
-    if(!(assay%in%names(input@assays))){
-      stop(paste0("Assay not found, assays available are, ", names(input@assays)))
-    }
-    input_mat <- assay(input, assay)[gene_subset,]
+    .check_assay(input, assay)
+    input_mat <- assay(input, assay)[genelist,]
     assay_name <- assay
   }
 
@@ -64,7 +62,7 @@ dim_reduce <- function(input,
 
   if(method == "ICA"){
     ica <- fastICA::fastICA(t(input_mat), n.comp=(nComp), alg.typ = 'parallel', fun='logcosh', alpha = 1.0, method = 'C', verbose = print_progress)
-    colnames(ica$A) <- gene_subset
+    colnames(ica$A) <- genelist
     rownames(ica$S) <- colnames(input)
     colnames(ica$S) <- paste0("IC_Comp", seq(1:ncol(ica$S)))
 
