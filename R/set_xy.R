@@ -14,6 +14,7 @@
 
 set_xy <- function(input,
                    lem,
+                   embedding,
                    x = "x",
                    y = "y"){
 
@@ -21,20 +22,16 @@ set_xy <- function(input,
     stop(paste0("LEM not found, reducedDims available are, ", names(reducedDims(input))))
   }
 
-  int_lem <- reducedDim(input, lem)
-
-  if(x == "x"){
-    colData(input)$x <- int_lem@metadata$x
-  } else {
-    colData(input)$x <- int_lem@sampleFactors[,x]
+  if(!(embedding %in% embeddings(input)$embedding_key)){
+    stop(paste0("Embedding not found, used embeddings() to view available options."))
   }
 
-  if(y == "y"){
-    colData(input)$y <- int_lem@metadata$y
-  } else {
-    colData(input)$y <- int_lem@sampleFactors[,y]
-  }
-    return(input)
+  embed <- embedding(input, lem, embedding)
+  colnames(embed) <- c(x,y)
+
+  colData(input)[,x] <- embed[,x]
+  colData(input)[,y] <- embed[,y]
+  return(input)
 }
 
 # Doc Check
