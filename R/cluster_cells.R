@@ -103,6 +103,9 @@ cluster_cells <- function(input,
     } else {
       cellcut = rownames(comb)[1:k]
     }
+    if(length(cellcut) == 0){
+      stop("Density based cluters cannot be found with given parameters")
+    }
     cellidx = which(names(clust_tSNE$rho)%in%cellcut)
     sc_clusters = densityClust::findClusters(clust_tSNE, peaks = cellidx)
     sc_clusters <- sc_clusters$clusters
